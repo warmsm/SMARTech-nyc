@@ -1,0 +1,249 @@
+import { useMemo, useState } from "react";
+import { usePosts } from "@/contexts/PostsContext";
+import { useAuth } from "@/contexts/AuthContext";
+import { Check, X } from "lucide-react";
+import { Button } from "@/app/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/app/components/ui/table";
+import { AuditPost } from "@/data/mockData";
+
+export default function ReviewApprovedPostsPage() {
+  const { posts, centralReviewPost } = usePosts();
+  const { currentOffice } = useAuth();
+  const [reviewingPostId, setReviewingPostId] = useState<string | null>(null);
+  const [comment, setComment] = useState("");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [expandedCaption, setExpandedCaption] = useState<string | null>(null);
+
+  const isCentral = currentOffice === "Central NYC";
+
+  const approvedPosts = useMemo(() => {
+    return posts.filter((post) => post.status === "Accepted");
+  }, [posts]);
+
+  if (!isCentral) {
+    return (
+      <div className="text-center text-muted-foreground py-10">
+        You do not have access to this page. Only Central NYC can review approved posts.
+      </div>
+    );
+  }
+
+  const handleApprove = async (postId: string) => {
+    try {
+      await centralReviewPost(postId, "Good for Posting");
+      alert("Post approved as Good for Posting!");
+    } catch (error) {
+      console.error("Error approving post:", error);
+      alert("Failed to approve post. Please try again.");
+    }
+  };
+
+  const handleReject = async (postId: string) => {
+    const rejectionComment = prompt("Please provide a reason for revision:");
+    if (!rejectionComment) return;
+
+    try {
+      await centralReviewPost(postId, "For Revision", rejectionComment);
+      alert("Post marked for revision!");
+    } catch (error) {
+      console.error("Error rejecting post:", error);
+      alert("Failed to mark post for revision. Please try again.");
+    }
+  };
+
+  const formatPlatforms = (platform: string | string[]) => {
+    if (Array.isArray(platform)) {
+      return platform.join(", ");
+    }
+    return platform;
+  };
+
+  const getReviewStatusBadge = (post: AuditPost) => {
+    if (!post.centralReviewStatus) {
+      return (
+        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-yellow-100 text-yellow-800">
+          Pending Review
+        </span>
+      );
+    }
+
+    if (post.centralReviewStatus === "Good for Posting") {
+      return (
+        <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-green-100 text-green-800">
+          Good for Posting
+        </span>
+      );
+    }
+
+    return (
+      <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-100 text-red-800">
+        For Revision
+      </span>
+    );
+  };
+
+  return (
+    <>
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          onClick={() => setSelectedImage(null)}
+        >
+          <div className="relative max-w-4xl max-h-[90vh]">
+            <img
+              src={selectedImage}
+              alt="Enlarged pubmat"
+              className="max-w-full max-h-[90vh] object-contain rounded-lg"
+            />
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-2 right-2 bg-white/90 hover:bg-white text-black rounded-full p-2 w-8 h-8 flex items-center justify-center font-bold"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      {expandedCaption && (
+        <div
+          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          onClick={() => setExpandedCaption(null)}
+        >
+          <div className="relative max-w-2xl w-full bg-white rounded-lg p-6">
+            <h3 className="text-lg font-bold mb-4">Full Caption</h3>
+            <p className="text-sm whitespace-pre-wrap">{expandedCaption}</p>
+            <button
+              onClick={() => setExpandedCaption(null)}
+              className="absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 text-black rounded-full p-2 w-8 h-8 flex items-center justify-center font-bold"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">
+            Review Approved Posts
+          </h1>
+          <p className="text-muted-foreground">
+            Cross-check approved posts from all offices
+          </p>
+        </div>
+
+      {approvedPosts.length === 0 ? (
+        <div className="text-center text-muted-foreground py-10 bg-card rounded-lg border">
+          No approved posts to review
+        </div>
+      ) : (
+        <div className="rounded-md border overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>ID</TableHead>
+                <TableHead>Office</TableHead>
+                <TableHead>Platform</TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead>Content</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Review Status</TableHead>
+                <TableHead>Comment</TableHead>
+                <TableHead>Actions</TableHead>
+              </TableRow>
+            </TableHeader>
+
+            <TableBody>
+              {approvedPosts.map((post) => (
+                <TableRow key={post.id}>
+                  <TableCell className="font-medium">{post.id}</TableCell>
+                  <TableCell className="text-sm">{post.office}</TableCell>
+                  <TableCell className="text-sm">{formatPlatforms(post.platform)}</TableCell>
+                  <TableCell className="text-sm capitalize">{post.auditFocus}</TableCell>
+
+                  <TableCell>
+                    <div className="max-w-md">
+                      {post.thumbnail && (
+                        <img
+                          src={post.thumbnail}
+                          alt={post.id}
+                          className="h-16 w-16 rounded object-cover mb-2 cursor-pointer hover:opacity-80 transition-opacity"
+                          onClick={() => setSelectedImage(post.thumbnail!)}
+                        />
+                      )}
+                      {post.caption && (
+                        <div className="text-sm text-muted-foreground">
+                          <div className="line-clamp-2">
+                            {post.caption}
+                          </div>
+                          {post.caption.length > 150 && (
+                            <button
+                              onClick={() => setExpandedCaption(post.caption || "")}
+                              className="text-primary hover:underline text-xs mt-1"
+                            >
+                              See more
+                            </button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+
+                  <TableCell>
+                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-green-100 text-green-800">
+                      {post.status}
+                    </span>
+                  </TableCell>
+
+                  <TableCell>{getReviewStatusBadge(post)}</TableCell>
+
+                  <TableCell>
+                    {post.centralReviewComment && (
+                      <p className="text-sm text-muted-foreground max-w-xs">
+                        {post.centralReviewComment}
+                      </p>
+                    )}
+                  </TableCell>
+
+                  <TableCell>
+                    {!post.centralReviewStatus || post.centralReviewStatus === "Pending Review" ? (
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleApprove(post.id)}
+                          className="border-green-500 text-green-700 hover:bg-green-50"
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleReject(post.id)}
+                          className="border-red-500 text-red-700 hover:bg-red-50"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-muted-foreground">Reviewed</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </div>
+      )}
+      </div>
+    </>
+  );
+}

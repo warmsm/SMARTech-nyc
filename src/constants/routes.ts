@@ -1,0 +1,15 @@
+export const ROUTES = {
+  HOME: "/",
+  PUBMATS: "/pubmats",
+  CAPTIONS: "/captions",
+  REVIEW_APPROVED: "/review-approved",
+  REVIEW_APPEALS: "/review-appeals",
+  REQUEST_APPROVAL: "/request-approval",
+  LOGIN: "/login",
+  ACCOUNT_ACCESS: "/account-access",
+  CREATE_ACCOUNT_REQUEST: "/create-account-request",
+  FORGOT_PASSWORD: "/forgot-password",
+  HANDOFF_REQUEST: "/handoff-request",
+  RESET_PASSWORD: "/reset-password",
+  ADMIN: "/admin",
+} as const;

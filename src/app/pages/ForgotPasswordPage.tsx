@@ -4,17 +4,16 @@ import { Card, CardContent } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
 import { Input } from "@/app/components/ui/input";
-import { USER_CREDENTIALS } from "@/contexts/AuthContext";
 import { useAccessRequests } from "@/contexts/AccessRequestsContext";
+import { api } from "@/utils/supabase/client";
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
   const { addRequest } = useAccessRequests();
 
   const [email, setEmail] = useState("");
-  const [step, setStep] = useState<"email" | "done">(
-    "email",
-  );
+  const [submittedEmail, setSubmittedEmail] = useState("");
+  const [step, setStep] = useState<"email" | "done">("email");
   const [error, setError] = useState("");
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
@@ -27,31 +26,34 @@ export default function ForgotPasswordPage() {
     }
 
     // confirm email belong in the nyc assigned email
-    const user =
-      USER_CREDENTIALS[email as keyof typeof USER_CREDENTIALS];
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (!user) {
+    let profile: { email: string; office: string };
+
+    try {
+      const response = await api.get(
+        `/profiles/by-email/${encodeURIComponent(normalizedEmail)}`,
+      );
+      profile = response.profile;
+    } catch {
       setError(
-        "This email is not registered to any NYC office.",
+        "This email is not registered to any approved office account.",
       );
       return;
     }
 
-    try {
-      await addRequest({
-        id: crypto.randomUUID(),
-        type: "forgot-password",
-        officeEmail: email,
-        officeName: user.office,
-        status: "Pending",
-        submittedAt: new Date().toLocaleString(),
-      });
+    await addRequest({
+      id: crypto.randomUUID(),
+      type: "forgot-password",
+      officeEmail: normalizedEmail,
+      officeName: profile.office,
+      status: "Pending",
+      submittedAt: new Date().toLocaleString(),
+    });
 
-      setStep("done");
-    } catch (error) {
-      console.error("Error submitting request:", error);
-      setError("Failed to submit request. Please try again.");
-    }
+    setSubmittedEmail(normalizedEmail);
+
+    setStep("done");
   };
 
   return (
@@ -60,13 +62,15 @@ export default function ForgotPasswordPage() {
         <Card className="bg-[#000033] border-[#000033] border-2">
           <CardContent className="py-12 px-8 space-y-6 text-center">
             <h1 className="text-2xl font-bold text-white">
-              Forgot Password Request
+              Change/Forgot Password Request
             </h1>
 
             {step === "email" && (
               <>
                 <p className="text-white/70 text-sm">
-                  Enter your assigned office email address. Your request will be sent to NYC Central Office for approval.
+                  Enter your assigned office email address. Your
+                  request will be sent to NYC Central Office for
+                  approval.
                 </p>
 
                 <form
@@ -112,7 +116,8 @@ export default function ForgotPasswordPage() {
             {step === "done" && (
               <>
                 <p className="text-green-400 text-sm">
-                  Your password reset request has been submitted successfully!
+                  Your password reset request has been submitted
+                  successfully!
                 </p>
 
                 <div className="bg-white/10 border border-white/20 rounded-lg p-4 text-left space-y-3">
@@ -120,7 +125,7 @@ export default function ForgotPasswordPage() {
                     <span className="font-semibold">
                       Email:
                     </span>{" "}
-                    {email}
+                    {submittedEmail}
                   </p>
                   <p className="text-sm text-white">
                     <span className="font-semibold">
@@ -132,8 +137,12 @@ export default function ForgotPasswordPage() {
 
                 <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
                   <p className="text-sm text-yellow-200">
-                    <strong>Next Steps:</strong><br />
-                    Once approved by NYC Central Office, you will receive a verification code. Use that code to reset your password via the login page.
+                    <strong>Next Steps:</strong>
+                    <br />
+                    Once approved by NYC Central Office, you
+                    will receive a verification code. Use that
+                    code to reset your password via the login
+                    page.
                   </p>
                 </div>
 

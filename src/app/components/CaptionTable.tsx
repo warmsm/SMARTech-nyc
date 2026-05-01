@@ -8,7 +8,12 @@ import {
 } from "@/app/components/ui/table";
 import { AuditPost } from "@/data/mockData";
 import { Button } from "@/app/components/ui/button";
-import { MessageSquare, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  MessageSquare,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePosts } from "@/contexts/PostsContext";
 import { useState, useMemo } from "react";
@@ -17,7 +22,14 @@ interface CaptionTableProps {
   posts: AuditPost[];
 }
 
-type SortColumn = "id" | "platform" | "status" | "reviewStatus" | "appealStatus" | "date" | "actions";
+type SortColumn =
+  | "id"
+  | "platform"
+  | "status"
+  | "reviewStatus"
+  | "appealStatus"
+  | "date"
+  | "actions";
 type SortDirection = "asc" | "desc";
 
 export function CaptionTable({ posts }: CaptionTableProps) {
@@ -26,11 +38,19 @@ export function CaptionTable({ posts }: CaptionTableProps) {
   const [appealingPostId, setAppealingPostId] = useState<
     string | null
   >(null);
-  const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-  const [expandedCaption, setExpandedCaption] = useState<string | null>(null);
-  const [expandedReason, setExpandedReason] = useState<string | null>(null);
-  const [expandedRemarks, setExpandedRemarks] = useState<string | null>(null);
+  const [sortColumn, setSortColumn] =
+    useState<SortColumn | null>(null);
+  const [sortDirection, setSortDirection] =
+    useState<SortDirection>("asc");
+  const [expandedCaption, setExpandedCaption] = useState<
+    string | null
+  >(null);
+  const [expandedReason, setExpandedReason] = useState<
+    string | null
+  >(null);
+  const [expandedRemarks, setExpandedRemarks] = useState<
+    string | null
+  >(null);
 
   const isCentral = currentOffice === "Central NYC";
 
@@ -43,7 +63,9 @@ export function CaptionTable({ posts }: CaptionTableProps) {
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+      setSortDirection(
+        sortDirection === "asc" ? "desc" : "asc",
+      );
     } else {
       setSortColumn(column);
       setSortDirection("asc");
@@ -83,16 +105,27 @@ export function CaptionTable({ posts }: CaptionTableProps) {
           bValue = new Date(b.submissionDate || b.date);
           break;
         case "actions":
-          // Sort by whether action is available (rejected & not appealed = 1, others = 0)
-          aValue = (a.status === "Rejected" && (!a.appealStatus || a.appealStatus === "Not Appealed")) ? 1 : 0;
-          bValue = (b.status === "Rejected" && (!b.appealStatus || b.appealStatus === "Not Appealed")) ? 1 : 0;
+          aValue =
+            a.status === "Rejected" &&
+            (!a.appealStatus ||
+              a.appealStatus === "Not Appealed")
+              ? 1
+              : 0;
+          bValue =
+            b.status === "Rejected" &&
+            (!b.appealStatus ||
+              b.appealStatus === "Not Appealed")
+              ? 1
+              : 0;
           break;
         default:
           return 0;
       }
 
-      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      if (aValue < bValue)
+        return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue)
+        return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
   }, [posts, sortColumn, sortDirection]);
@@ -117,17 +150,15 @@ export function CaptionTable({ posts }: CaptionTableProps) {
     try {
       setAppealingPostId(postId);
       await appealPost(postId, reason);
-      alert(
-        "Appeal submitted successfully! Central office will review your appeal.",
-      );
+      alert("Appeal submitted successfully!");
     } catch (error) {
       console.error("Error submitting appeal:", error);
-      alert("Failed to submit appeal. Please try again.");
+      alert("Failed to submit appeal.");
     } finally {
       setAppealingPostId(null);
     }
   };
-  
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Accepted":
@@ -149,6 +180,15 @@ export function CaptionTable({ posts }: CaptionTableProps) {
   };
 
   const getReviewStatusBadge = (post: AuditPost) => {
+    const isSystemRejected = post.status === "Rejected";
+    const hasNotAppealed =
+      !post.appealStatus ||
+      post.appealStatus === "Not Appealed";
+
+    if (isSystemRejected && hasNotAppealed) {
+      return <span className="text-xs text-gray-500">-</span>;
+    }
+
     if (
       !post.centralReviewStatus ||
       post.centralReviewStatus === "Pending Review"
@@ -168,9 +208,13 @@ export function CaptionTable({ posts }: CaptionTableProps) {
       );
     }
 
+    const label =
+      post.appealStatus === "Appeal Rejected"
+        ? "Rejected"
+        : "For Revision";
     return (
       <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-100 text-red-800">
-        For Revision
+        {label}
       </span>
     );
   };
@@ -182,7 +226,6 @@ export function CaptionTable({ posts }: CaptionTableProps) {
     ) {
       return <span className="text-xs text-gray-500">-</span>;
     }
-
     if (post.appealStatus === "Appealed") {
       return (
         <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-yellow-100 text-yellow-800">
@@ -190,7 +233,6 @@ export function CaptionTable({ posts }: CaptionTableProps) {
         </span>
       );
     }
-
     if (post.appealStatus === "Appeal Approved") {
       return (
         <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-green-100 text-green-800">
@@ -198,7 +240,6 @@ export function CaptionTable({ posts }: CaptionTableProps) {
         </span>
       );
     }
-
     return (
       <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-100 text-red-800">
         Appeal Rejected
@@ -208,14 +249,19 @@ export function CaptionTable({ posts }: CaptionTableProps) {
 
   return (
     <>
+      {/* Modals for expanding text (ExpandedCaption, ExpandedReason, ExpandedRemarks) remain here... */}
       {expandedCaption && (
         <div
           className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
           onClick={() => setExpandedCaption(null)}
         >
           <div className="relative max-w-2xl w-full bg-white rounded-lg p-6">
-            <h3 className="text-lg font-bold mb-4">Full Caption</h3>
-            <p className="text-sm whitespace-pre-wrap">{expandedCaption}</p>
+            <h3 className="text-lg font-bold mb-4">
+              Full Caption
+            </h3>
+            <p className="text-sm whitespace-pre-wrap">
+              {expandedCaption}
+            </p>
             <button
               onClick={() => setExpandedCaption(null)}
               className="absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 text-black rounded-full p-2 w-8 h-8 flex items-center justify-center font-bold"
@@ -225,15 +271,18 @@ export function CaptionTable({ posts }: CaptionTableProps) {
           </div>
         </div>
       )}
-
       {expandedReason && (
         <div
           className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
           onClick={() => setExpandedReason(null)}
         >
           <div className="relative max-w-2xl w-full bg-white rounded-lg p-6">
-            <h3 className="text-lg font-bold mb-4">Rejection Reason</h3>
-            <p className="text-sm whitespace-pre-wrap">{expandedReason}</p>
+            <h3 className="text-lg font-bold mb-4">
+              Review Comment
+            </h3>
+            <p className="text-sm whitespace-pre-wrap">
+              {expandedReason}
+            </p>
             <button
               onClick={() => setExpandedReason(null)}
               className="absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 text-black rounded-full p-2 w-8 h-8 flex items-center justify-center font-bold"
@@ -243,15 +292,18 @@ export function CaptionTable({ posts }: CaptionTableProps) {
           </div>
         </div>
       )}
-
       {expandedRemarks && (
         <div
           className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
           onClick={() => setExpandedRemarks(null)}
         >
           <div className="relative max-w-2xl w-full bg-white rounded-lg p-6">
-            <h3 className="text-lg font-bold mb-4">Full Remarks</h3>
-            <p className="text-sm whitespace-pre-wrap">{expandedRemarks}</p>
+            <h3 className="text-lg font-bold mb-4">
+              Full Remarks
+            </h3>
+            <p className="text-sm whitespace-pre-wrap">
+              {expandedRemarks}
+            </p>
             <button
               onClick={() => setExpandedRemarks(null)}
               className="absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 text-black rounded-full p-2 w-8 h-8 flex items-center justify-center font-bold"
@@ -266,66 +318,82 @@ export function CaptionTable({ posts }: CaptionTableProps) {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("id")}
-              >
-                Caption ID
-                <SortIcon column="id" />
-              </TableHead>
-              <TableHead
-                className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("platform")}
-              >
-                Platform
-                <SortIcon column="platform" />
-              </TableHead>
+              {/* 1. Caption */}
               <TableHead>Caption</TableHead>
+
+              {/* 2. Status */}
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
                 onClick={() => handleSort("status")}
               >
-                Status
-                <SortIcon column="status" />
+                Status <SortIcon column="status" />
               </TableHead>
+
+              {/* 3-6. AI Scores */}
               <TableHead>Score</TableHead>
               <TableHead>Grammar</TableHead>
               <TableHead>Inclusivity</TableHead>
               <TableHead>Tone</TableHead>
+
+              {/* 7. Remarks */}
               <TableHead>Remarks</TableHead>
+
               {!isCentral && (
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort("reviewStatus")}
-                >
-                  Review Status
-                  <SortIcon column="reviewStatus" />
-                </TableHead>
+                <>
+                  {/* 8. Review Status */}
+                  <TableHead
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleSort("reviewStatus")}
+                  >
+                    Review Status{" "}
+                    <SortIcon column="reviewStatus" />
+                  </TableHead>
+
+                  {/* 9. Appeal Status */}
+                  <TableHead
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleSort("appealStatus")}
+                  >
+                    Appeal Status{" "}
+                    <SortIcon column="appealStatus" />
+                  </TableHead>
+
+                  {/* 10. Review Comment (Renamed) */}
+                  <TableHead>Review Comment</TableHead>
+                </>
               )}
-              {!isCentral && (
-                <TableHead
-                  className="cursor-pointer hover:bg-muted/50"
-                  onClick={() => handleSort("appealStatus")}
-                >
-                  Appeal Status
-                  <SortIcon column="appealStatus" />
-                </TableHead>
-              )}
-              {!isCentral && <TableHead>Rejection Reason</TableHead>}
+
+              {/* 11. Posting Date (Renamed) */}
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
                 onClick={() => handleSort("date")}
               >
-                Date Submitted
-                <SortIcon column="date" />
+                Posting Date <SortIcon column="date" />
               </TableHead>
+
+              {/* 12. Platforms (Renamed) */}
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort("platform")}
+              >
+                Platform/s <SortIcon column="platform" />
+              </TableHead>
+
+              {/* 13. Caption ID */}
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort("id")}
+              >
+                Caption ID <SortIcon column="id" />
+              </TableHead>
+
               {!isCentral && (
+                /* 14. Action (Renamed) */
                 <TableHead
                   className="cursor-pointer hover:bg-muted/50"
                   onClick={() => handleSort("actions")}
                 >
-                  Actions
-                  <SortIcon column="actions" />
+                  Action <SortIcon column="actions" />
                 </TableHead>
               )}
             </TableRow>
@@ -334,113 +402,139 @@ export function CaptionTable({ posts }: CaptionTableProps) {
           <TableBody>
             {sortedPosts.map((post) => (
               <TableRow key={post.id}>
-                <TableCell className="font-medium">
-                  {getCaptionId(post.id)}
-                </TableCell>
-
-                <TableCell>
-                  {formatPlatforms(post.platform)}
-                </TableCell>
-
+                {/* 1. Caption */}
                 <TableCell>
                   <div className="max-w-md text-sm text-muted-foreground">
                     <div className="line-clamp-3">
                       {post.caption}
                     </div>
-                    {post.caption && post.caption.length > 150 && (
-                      <button
-                        onClick={() => setExpandedCaption(post.caption || "")}
-                        className="text-primary hover:underline text-xs mt-1"
-                      >
-                        See more
-                      </button>
-                    )}
+                    {post.caption &&
+                      post.caption.length > 50 && (
+                        <button
+                          onClick={() =>
+                            setExpandedCaption(
+                              post.caption || "",
+                            )
+                          }
+                          className="text-primary hover:underline text-xs mt-1"
+                        >
+                          See more
+                        </button>
+                      )}
                   </div>
                 </TableCell>
 
+                {/* 2. Status */}
                 <TableCell>
                   <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(
-                      post.status,
-                    )}`}
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(post.status)}`}
                   >
                     {post.status}
                   </span>
                 </TableCell>
 
+                {/* 3-6. AI Scores */}
                 <TableCell>
                   <span
-                    className={`font-semibold ${getScoreColor(
-                      post.score,
-                    )}`}
+                    className={`font-semibold ${getScoreColor(post.score)}`}
                   >
                     {post.score}
                   </span>
                 </TableCell>
-
                 <TableCell>{post.grammar ?? "-"}</TableCell>
                 <TableCell>{post.inclusivity ?? "-"}</TableCell>
                 <TableCell>{post.tone ?? "-"}</TableCell>
 
+                {/* 7. Remarks */}
                 <TableCell>
                   <div className="max-w-md text-sm text-muted-foreground">
                     <div className="line-clamp-2">
                       {post.remarks || post.recommendation}
                     </div>
-                    {(post.remarks || post.recommendation) && (post.remarks || post.recommendation)!.length > 100 && (
-                      <button
-                        onClick={() => setExpandedRemarks(post.remarks || post.recommendation || "")}
-                        className="text-primary hover:underline text-xs mt-1"
-                      >
-                        See more
-                      </button>
-                    )}
+                    {(post.remarks || post.recommendation) &&
+                      (post.remarks || post.recommendation)!
+                        .length > 50 && (
+                        <button
+                          onClick={() =>
+                            setExpandedRemarks(
+                              post.remarks ||
+                                post.recommendation ||
+                                "",
+                            )
+                          }
+                          className="text-primary hover:underline text-xs mt-1"
+                        >
+                          See more
+                        </button>
+                      )}
                   </div>
                 </TableCell>
 
                 {!isCentral && (
-                  <TableCell>
-                    {getReviewStatusBadge(post)}
-                  </TableCell>
-                )}
+                  <>
+                    {/* 8. Review Status */}
+                    <TableCell>
+                      {getReviewStatusBadge(post)}
+                    </TableCell>
 
-                {!isCentral && (
-                  <TableCell>
-                    {getAppealStatusBadge(post)}
-                  </TableCell>
-                )}
+                    {/* 9. Appeal Status */}
+                    <TableCell>
+                      {getAppealStatusBadge(post)}
+                    </TableCell>
 
-                {!isCentral && (
-                  <TableCell>
-                    {post.centralReviewComment ? (
-                      <div className="max-w-md text-sm text-muted-foreground">
-                        <div className="line-clamp-2">
-                          {post.centralReviewComment}
+                    {/* 10. Review Comment */}
+                    <TableCell>
+                      {post.centralReviewComment ? (
+                        <div className="max-w-md text-sm text-muted-foreground">
+                          <div className="line-clamp-2">
+                            {post.centralReviewComment}
+                          </div>
+                          {post.centralReviewComment.length >
+                            50 && (
+                            <button
+                              onClick={() =>
+                                setExpandedReason(
+                                  post.centralReviewComment ||
+                                    "",
+                                )
+                              }
+                              className="text-primary hover:underline text-xs mt-1"
+                            >
+                              See more
+                            </button>
+                          )}
                         </div>
-                        {post.centralReviewComment.length > 100 && (
-                          <button
-                            onClick={() => setExpandedReason(post.centralReviewComment || "")}
-                            className="text-primary hover:underline text-xs mt-1"
-                          >
-                            See more
-                          </button>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-xs text-gray-500">-</span>
-                    )}
-                  </TableCell>
+                      ) : (
+                        <span className="text-xs text-gray-500">
+                          -
+                        </span>
+                      )}
+                    </TableCell>
+                  </>
                 )}
 
+                {/* 11. Posting Date */}
                 <TableCell className="text-sm">
                   {post.submissionDate || post.date}
                 </TableCell>
 
+                {/* 12. Platform/s */}
+                <TableCell>
+                  {formatPlatforms(post.platform)}
+                </TableCell>
+
+                {/* 13. Pubmat ID */}
+                <TableCell className="font-medium">
+                  {getCaptionId(post.id)}
+                </TableCell>
+
                 {!isCentral && (
+                  /* 14. Action */
                   <TableCell>
                     {post.status === "Rejected" &&
                       (!post.appealStatus ||
-                        post.appealStatus === "Not Appealed") && (
+                        post.appealStatus ===
+                          "Not Appealed") && (
                         <Button
                           size="sm"
                           variant="outline"
@@ -459,12 +553,14 @@ export function CaptionTable({ posts }: CaptionTableProps) {
                         Appeal Pending
                       </span>
                     )}
-                    {post.appealStatus === "Appeal Approved" && (
+                    {post.appealStatus ===
+                      "Appeal Approved" && (
                       <span className="text-xs text-green-600">
                         Appeal Approved
                       </span>
                     )}
-                    {post.appealStatus === "Appeal Rejected" && (
+                    {post.appealStatus ===
+                      "Appeal Rejected" && (
                       <span className="text-xs text-red-600">
                         Appeal Rejected
                       </span>

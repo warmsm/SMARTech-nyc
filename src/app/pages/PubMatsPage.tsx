@@ -12,7 +12,13 @@ import {
 import { usePosts } from "@/contexts/PostsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { DatePicker } from "@/app/components/ui/date-picker";
-import { format } from "date-fns";
+
+const formatDateSafe = (date: Date): string => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 
 type Platform = "Facebook" | "Instagram" | "X";
 type Collaborator = "SK" | "YORP";
@@ -25,7 +31,7 @@ interface AnalysisResult {
 
 export function PubMatsPage() {
   const { addPost } = usePosts();
-  const { currentOffice } = useAuth();
+  const { currentOffice, isLoading } = useAuth();
 
   const [uploadedImage, setUploadedImage] = useState<
     string | null
@@ -133,7 +139,7 @@ export function PubMatsPage() {
       const file = files[0];
 
       // Check if it's an image
-      if (file.type.startsWith('image/')) {
+      if (file.type.startsWith("image/")) {
         setFileName(file.name);
 
         const reader = new FileReader();
@@ -161,10 +167,108 @@ export function PubMatsPage() {
     }
   };
 
-  const analyzeContent = () => {
+  const analyzeContent = async () => {
     setIsAnalyzing(true);
 
-    setTimeout(async () => {
+    try {
+      const response = await fetch(
+        "https://lfaithb-smartech-pubmat-checker.hf.space/api/predict",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            data: [uploadedImage],
+          }),
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("API request failed");
+      }
+
+      const result = await response.json();
+      const apiData = result.data[0];
+
+      let pubmatScore = 70;
+      let status: "Accepted" | "Rejected" = "Rejected";
+      let remarks = "Analysis completed";
+
+      if (typeof apiData === "object") {
+        pubmatScore =
+          apiData.score || apiData.pubmatScore || 70;
+        status =
+          apiData.status ||
+          (pubmatScore >= 75 ? "Accepted" : "Rejected");
+        remarks =
+          apiData.remarks ||
+          apiData.recommendation ||
+          "Analysis completed";
+      } else if (typeof apiData === "string") {
+        try {
+          const parsed = JSON.parse(apiData);
+          pubmatScore =
+            parsed.score || parsed.pubmatScore || 70;
+          status =
+            parsed.status ||
+            (pubmatScore >= 75 ? "Accepted" : "Rejected");
+          remarks =
+            parsed.remarks ||
+            parsed.recommendation ||
+            "Analysis completed";
+        } catch (e) {
+          remarks = apiData;
+          status = pubmatScore >= 75 ? "Accepted" : "Rejected";
+        }
+      }
+
+      setAnalysisResult({
+        pubmatScore,
+        remarks,
+        status,
+      });
+      setIsAnalyzing(false);
+
+      if (isLoading || !currentOffice) {
+        alert(
+          "Office profile is still loading. Please wait a moment and try again.",
+        );
+        return;
+      }
+
+      const today = new Date().toISOString().split("T")[0];
+      const auditDateStr = postDate
+        ? formatDateSafe(postDate)
+        : today;
+
+      await addPost({
+        id: `POST-${Date.now().toString().slice(-6)}`,
+        platform:
+          selectedPlatforms.length === 1
+            ? selectedPlatforms[0]
+            : selectedPlatforms,
+        caption: "",
+        thumbnail: uploadedImage || undefined,
+        score: pubmatScore,
+        pubmatScore,
+        status,
+        recommendation: remarks,
+        date: today,
+        office: currentOffice,
+        submissionDate: auditDateStr,
+        lastUpdated: auditDateStr,
+        auditFocus: "pubmat",
+        centralReviewStatus: "Pending Review",
+        appealStatus: "Not Appealed",
+        pubmatType: postType,
+      });
+
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
+    } catch (error) {
+      setIsAnalyzing(false);
+
       let pubmatScore = 70;
 
       switch (postType) {
@@ -223,48 +327,37 @@ export function PubMatsPage() {
         remarks,
         status,
       });
-      setIsAnalyzing(false);
 
       const today = new Date().toISOString().split("T")[0];
       const auditDateStr = postDate
-        ? format(postDate, "yyyy-MM-dd")
+        ? formatDateSafe(postDate)
         : today;
 
-      try {
-        // Create single post with all selected platforms
-        await addPost({
-          id: `POST-${Date.now().toString().slice(-6)}`,
-          platform:
-            selectedPlatforms.length === 1
-              ? selectedPlatforms[0]
-              : selectedPlatforms,
-          caption: "",
-          thumbnail: uploadedImage || undefined,
-          score: pubmatScore,
-          pubmatScore,
-          status,
-          recommendation: remarks,
-          date: today,
-          office: currentOffice || "",
-          submissionDate: auditDateStr,
-          lastUpdated: auditDateStr,
-          auditFocus: "pubmat",
-          centralReviewStatus: "Pending Review",
-          appealStatus: "Not Appealed",
-          pubmatType: postType,
-        });
+      await addPost({
+        id: `POST-${Date.now().toString().slice(-6)}`,
+        platform:
+          selectedPlatforms.length === 1
+            ? selectedPlatforms[0]
+            : selectedPlatforms,
+        caption: "",
+        thumbnail: uploadedImage || undefined,
+        score: pubmatScore,
+        pubmatScore,
+        status,
+        recommendation: remarks,
+        date: today,
+        office: currentOffice,
+        submissionDate: auditDateStr,
+        lastUpdated: auditDateStr,
+        auditFocus: "pubmat",
+        centralReviewStatus: "Pending Review",
+        appealStatus: "Not Appealed",
+        pubmatType: postType,
+      });
 
-        setShowSuccessMessage(true);
-        setTimeout(() => setShowSuccessMessage(false), 3000);
-      } catch (error) {
-        console.error("Error submitting post:", error);
-        setAnalysisResult({
-          ...analysisResult!,
-          remarks:
-            "Failed to submit post. Please try again.",
-        });
-      }
-    }, 2200);
+      setShowSuccessMessage(true);
+      setTimeout(() => setShowSuccessMessage(false), 3000);
+    }
   };
 
   const handleStartNewAudit = () => {
@@ -525,13 +618,14 @@ export function PubMatsPage() {
               Date
             </span>
             <span className="text-sm text-muted-foreground block mb-4">
-              Select audit date
+              Select posting date
             </span>
           </label>
           <DatePicker
             date={postDate}
             onDateChange={setPostDate}
             placeholder="Pick a date"
+            minDate={new Date()}
           />
         </div>
 
@@ -556,7 +650,7 @@ export function PubMatsPage() {
             ) : (
               <>
                 <TrendingUp className="h-5 w-5" />
-                <span>Analyze Content</span>
+                <span>Analyze</span>
               </>
             )}
           </button>
@@ -595,29 +689,6 @@ export function PubMatsPage() {
                   </h3>
                   <p className="text-xs text-muted-foreground">
                     Content Analysis Complete
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-4">
-                <div
-                  className={`rounded-lg p-4 text-center ${
-                    analysisResult.pubmatScore >= 75
-                      ? "border-2 border-green-500 bg-green-100"
-                      : "border-2 border-red-500 bg-red-100"
-                  }`}
-                >
-                  <p
-                    className={`text-3xl font-bold ${
-                      analysisResult.pubmatScore >= 75
-                        ? "text-green-700"
-                        : "text-red-700"
-                    }`}
-                  >
-                    {analysisResult.pubmatScore}
-                  </p>
-                  <p className="mt-1 text-xs font-semibold text-secondary">
-                    Pubmat Score
                   </p>
                 </div>
               </div>

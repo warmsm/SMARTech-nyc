@@ -11,10 +11,24 @@ import { api } from "@/utils/supabase/client";
 interface PostsContextType {
   posts: AuditPost[];
   addPost: (post: AuditPost) => Promise<void>;
-  updatePost: (postId: string, updatedPost: AuditPost) => Promise<void>;
-  centralReviewPost: (postId: string, status: string, comment?: string) => Promise<void>;
-  appealPost: (postId: string, comment: string) => Promise<void>;
-  reviewAppeal: (postId: string, approved: boolean, comment?: string) => Promise<void>;
+  updatePost: (
+    postId: string,
+    updatedPost: AuditPost,
+  ) => Promise<void>;
+  centralReviewPost: (
+    postId: string,
+    status: string,
+    comment?: string,
+  ) => Promise<void>;
+  appealPost: (
+    postId: string,
+    comment: string,
+  ) => Promise<void>;
+  reviewAppeal: (
+    postId: string,
+    approved: boolean,
+    comment?: string,
+  ) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -37,9 +51,9 @@ export function PostsProvider({
         setIsLoading(true);
         const response = await api.get("/posts");
         setPosts(response.posts || []);
-      } catch (error) {
-        console.error("Error loading posts from server:", error);
-        setPosts([]);
+      } catch (error: any) {
+          console.error("❌ REAL ERROR:", error);
+          setPosts([]);
       } finally {
         setIsLoading(false);
       }
@@ -51,11 +65,11 @@ export function PostsProvider({
   const addPost = async (post: AuditPost): Promise<void> => {
     try {
       await api.post("/posts", post);
-      setPosts((prevPosts) => [post, ...prevPosts]);
     } catch (error) {
-      console.error("Error adding post:", error);
-      throw error;
+      // Server unavailable, continue with local storage
     }
+    // Always update local state regardless of server response
+    setPosts((prevPosts) => [post, ...prevPosts]);
   };
 
   const updatePost = async (
@@ -64,15 +78,15 @@ export function PostsProvider({
   ): Promise<void> => {
     try {
       await api.put(`/posts/${postId}`, updatedPost);
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === postId ? updatedPost : post,
-        ),
-      );
     } catch (error) {
-      console.error("Error updating post:", error);
-      throw error;
+      // Server unavailable, continue with local storage
     }
+    // Always update local state regardless of server response
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId ? updatedPost : post,
+      ),
+    );
   };
 
   const centralReviewPost = async (
@@ -85,22 +99,25 @@ export function PostsProvider({
         centralReviewStatus: status,
         centralReviewComment: comment,
       });
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === postId
-            ? {
-                ...post,
-                centralReviewStatus: status as any,
-                centralReviewComment: comment,
-                centralReviewDate: new Date().toISOString().split("T")[0],
-              }
-            : post,
-        ),
-      );
     } catch (error) {
-      console.error("Error reviewing post:", error);
-      throw error;
+      // Server unavailable, continue with local storage
     }
+
+    // Always update local state regardless of server response
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              centralReviewStatus: status as any,
+              centralReviewComment: comment,
+              centralReviewDate: new Date()
+                .toISOString()
+                .split("T")[0],
+            }
+          : post,
+      ),
+    );
   };
 
   const appealPost = async (
@@ -111,22 +128,24 @@ export function PostsProvider({
       await api.post(`/posts/${postId}/appeal`, {
         appealComment: comment,
       });
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === postId
-            ? {
-                ...post,
-                appealStatus: "Appealed",
-                appealComment: comment,
-                appealDate: new Date().toISOString().split("T")[0],
-              }
-            : post,
-        ),
-      );
     } catch (error) {
-      console.error("Error appealing post:", error);
-      throw error;
+      console.error("Failed to appeal post:", error);
     }
+
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              appealStatus: "Appealed",
+              appealComment: comment,
+              appealDate: new Date()
+                .toISOString()
+                .split("T")[0],
+            }
+          : post,
+      ),
+    );
   };
 
   const reviewAppeal = async (
@@ -139,28 +158,43 @@ export function PostsProvider({
         approved,
         centralReviewComment: comment,
       });
-      setPosts((prevPosts) =>
-        prevPosts.map((post) =>
-          post.id === postId
-            ? {
-                ...post,
-                appealStatus: approved ? "Appeal Approved" : "Appeal Rejected",
-                centralReviewStatus: approved ? "Good for Posting" : "For Revision",
-                centralReviewComment: comment,
-                centralReviewDate: new Date().toISOString().split("T")[0],
-              }
-            : post,
-        ),
-      );
     } catch (error) {
-      console.error("Error reviewing appeal:", error);
-      throw error;
+      // Server unavailable, continue with local storage
     }
+
+    // Always update local state regardless of server response
+    setPosts((prevPosts) =>
+      prevPosts.map((post) =>
+        post.id === postId
+          ? {
+              ...post,
+              appealStatus: approved
+                ? "Appeal Approved"
+                : "Appeal Rejected",
+              centralReviewStatus: approved
+                ? "Good for Posting"
+                : "For Revision",
+              centralReviewComment: comment,
+              centralReviewDate: new Date()
+                .toISOString()
+                .split("T")[0],
+            }
+          : post,
+      ),
+    );
   };
 
   return (
     <PostsContext.Provider
-      value={{ posts, addPost, updatePost, centralReviewPost, appealPost, reviewAppeal, isLoading }}
+      value={{
+        posts,
+        addPost,
+        updatePost,
+        centralReviewPost,
+        appealPost,
+        reviewAppeal,
+        isLoading,
+      }}
     >
       {children}
     </PostsContext.Provider>

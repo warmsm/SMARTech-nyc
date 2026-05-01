@@ -4,28 +4,22 @@ import {
   useNavigate,
 } from "react-router-dom";
 import {
-  House,
-  Image,
-  MessageSquare,
   Menu,
   X as CloseIcon,
-  Upload,
   LogOut,
-  ChevronDown,
   ClipboardList,
-  Settings,
   CheckCircle,
   MessageSquareWarning,
 } from "lucide-react";
 
 import { Instagram } from "@mui/icons-material";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { Button } from "@/app/components/ui/button";
+import { ROUTES } from "@/constants/routes";
 import nycLogo from "figma:asset/32e65005e1211eef2a5c6c89d5f1fa935cae4da4.png";
 import bagongPilipinasLogo from "figma:asset/55eb1781941b555e08c0b366d93a03c121091573.png";
 
-// Custom Facebook icon
 const FacebookIcon = ({
   className,
 }: {
@@ -41,7 +35,6 @@ const FacebookIcon = ({
   </svg>
 );
 
-// Custom X icon - simple X shape
 const XIcon = ({ className }: { className?: string }) => (
   <svg
     viewBox="0 0 24 24"
@@ -53,7 +46,6 @@ const XIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-// Custom filled arrow down icon
 const FilledArrowDown = ({
   className,
 }: {
@@ -74,39 +66,33 @@ export function Navigation() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const { currentOffice, logout } = useAuth();
+  const { profile, isLoading, logout, isAdmin } = useAuth();
+  const isCentral = isAdmin;
+  const currentOffice = profile?.office ?? null;
 
-  const isCentral = currentOffice === "Central NYC";
-
-  const navItems = [
-    { path: "/", label: "Home", icon: House },
-    { path: "/pubmats", label: "PubMats", icon: Image },
-    {
-      path: "/captions",
-      label: "Captions",
-      icon: MessageSquare,
-    },
-  ];
-
-  const centralNavItems = isCentral
-    ? [
-        { path: "/review-approved", label: "Review Approved", icon: CheckCircle },
-        { path: "/review-appeals", label: "Review Appeals", icon: MessageSquareWarning },
-      ]
-    : [];
+  const navItems = useMemo(
+    () => [
+      { path: ROUTES.HOME, label: "Home" },
+      { path: ROUTES.PUBMATS, label: "PubMats" },
+      { path: ROUTES.CAPTIONS, label: "Captions" },
+    ],
+    [],
+  );
 
   const handleLogout = () => {
     logout();
     setIsOpen(false);
     setIsDropdownOpen(false);
-    navigate("/login");
+    navigate(ROUTES.LOGIN, { replace: true });
   };
 
   return (
-    <nav className="bg-secondary text-secondary-foreground shadow-lg">
+    <nav
+      style={{ backgroundColor: "#000033" }}
+      className="text-white"
+    >
       <div className="container mx-auto px-4 md:px-8">
         <div className="flex items-center h-16">
-          {/* Left: Logo and Title */}
           <div className="flex items-center space-x-2 md:space-x-3 flex-shrink-0">
             <img
               src={nycLogo}
@@ -119,46 +105,64 @@ export function Navigation() {
               className="h-8 w-8 md:h-10 md:w-10"
             />
             <div className="hidden sm:block">
-              <h1 className="text-sm md:text-xl font-bold whitespace-nowrap">
+              <h1 className="text-sm md:text-xl font-bold whitespace-nowrap text-white">
                 National Youth Commission
               </h1>
-              {currentOffice && (
-                <p className="text-xs text-secondary-foreground/70">
-                  {currentOffice}
-                </p>
-              )}
+              <p className="text-xs text-white/70">
+                {isLoading
+                  ? "Loading office..."
+                  : currentOffice || ""}
+              </p>
             </div>
             <h1 className="text-sm font-bold sm:hidden">NYC</h1>
           </div>
 
-          {/* Center: Desktop Navigation - uses flex-1 to take remaining space and centers content */}
           <div className="hidden lg:flex flex-1 justify-center">
-            <div className="flex space-x-1">
-              {[...navItems, ...centralNavItems].map((item) => {
-                const Icon = item.icon;
+            <div className="flex" style={{ gap: "2.5rem" }}>
+              {navItems.map((item) => {
                 const isActive =
                   location.pathname === item.path;
                 return (
                   <Link
                     key={item.path}
                     to={item.path}
-                    className={`flex items-center space-x-2 px-4 py-2 rounded-md transition-colors ${
-                      isActive
-                        ? "bg-accent text-accent-foreground"
-                        : "hover:bg-secondary-foreground/10"
-                    }`}
+                    className="relative"
+                    style={{
+                      paddingTop: "0.85rem",
+                      paddingBottom: "0.7rem",
+                      letterSpacing: "-0.2px",
+                      color: isActive ? "#FFFFFF" : "#FFFFFF",
+                      transition: "color 0.2s ease",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        e.currentTarget.style.color = "#0099FF";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = "#FFFFFF";
+                    }}
                   >
-                    <Icon className="h-5 w-5" />
-                    <span>{item.label}</span>
+                    {item.label}
+                    {isActive && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          bottom: "0",
+                          left: "0",
+                          right: "0",
+                          height: "3px",
+                          backgroundColor: "#FFFF00",
+                        }}
+                      />
+                    )}
                   </Link>
                 );
               })}
             </div>
           </div>
 
-          {/* Right: Social Icons, Logout Button, and Mobile Menu Button */}
           <div className="flex items-center space-x-3 md:space-x-4 group">
-            {/* Social Icons */}
             <div className="flex items-center space-x-3 md:space-x-4">
               <a
                 href="https://www.facebook.com/nationalyouthcommission"
@@ -204,7 +208,6 @@ export function Navigation() {
               {/* Dropdown Menu */}
               {isDropdownOpen && (
                 <>
-                  {/* Backdrop to close dropdown when clicking outside */}
                   <div
                     className="fixed inset-0 z-10"
                     onClick={() => setIsDropdownOpen(false)}
@@ -217,13 +220,35 @@ export function Navigation() {
                         <>
                           <button
                             onClick={() => {
-                              navigate("/request-approval");
+                              navigate(ROUTES.REQUEST_APPROVAL);
                               setIsDropdownOpen(false);
                             }}
                             className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
                           >
                             <ClipboardList className="h-4 w-4 mr-2" />
-                            Request Approval
+                            Requests
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              navigate(ROUTES.REVIEW_APPROVED);
+                              setIsDropdownOpen(false);
+                            }}
+                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Approved
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              navigate(ROUTES.REVIEW_APPEALS);
+                              setIsDropdownOpen(false);
+                            }}
+                            className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                          >
+                            <MessageSquareWarning className="h-4 w-4 mr-2" />
+                            Appeals
                           </button>
 
                           <div className="border-t my-1" />
@@ -243,7 +268,6 @@ export function Navigation() {
               )}
             </div>
 
-            {/* Mobile Menu Button */}
             <button
               onClick={() => setIsOpen(!isOpen)}
               className="lg:hidden p-2 rounded-md hover:bg-secondary-foreground/10 transition-colors"
@@ -258,10 +282,9 @@ export function Navigation() {
           </div>
         </div>
 
-        {/* Mobile Navigation Menu */}
         {isOpen && (
           <div className="lg:hidden pb-4">
-            {currentOffice && (
+            {!isLoading && currentOffice && (
               <div className="px-4 py-2 mb-2 bg-secondary-foreground/5 rounded-md">
                 <p className="text-xs text-secondary-foreground/70">
                   Logged in as:
@@ -272,8 +295,7 @@ export function Navigation() {
               </div>
             )}
             <div className="flex flex-col space-y-2">
-              {[...navItems, ...centralNavItems].map((item) => {
-                const Icon = item.icon;
+              {navItems.map((item) => {
                 const isActive =
                   location.pathname === item.path;
                 return (
@@ -281,29 +303,58 @@ export function Navigation() {
                     key={item.path}
                     to={item.path}
                     onClick={() => setIsOpen(false)}
-                    className={`flex items-center space-x-2 px-4 py-3 rounded-md transition-colors ${
-                      isActive
-                        ? "bg-accent text-accent-foreground"
-                        : "hover:bg-secondary-foreground/10"
-                    }`}
+                    className="relative px-4 py-3 transition-colors"
+                    style={{
+                      letterSpacing: "-0.2px",
+                      color: isActive ? "#FFFFFF" : "#FFFFFF",
+                      borderLeft: isActive
+                        ? "3px solid #FFFF00"
+                        : "none",
+                      paddingLeft: isActive
+                        ? "calc(1rem - 3px)"
+                        : "1rem",
+                    }}
                   >
-                    <Icon className="h-5 w-5" />
-                    <span>{item.label}</span>
+                    {item.label}
                   </Link>
                 );
               })}
 
               {isCentral && (
-                <Button
-                  onClick={() => {
-                    navigate("/request-approval");
-                    setIsOpen(false);
-                  }}
-                  variant="outline"
-                  className="flex items-center justify-start px-4 py-3 h-auto bg-transparent border-secondary-foreground/20 hover:bg-secondary-foreground/10"
-                >
-                  <span>Request Approval</span>
-                </Button>
+                <>
+                  <Button
+                    onClick={() => {
+                      navigate(ROUTES.REQUEST_APPROVAL);
+                      setIsOpen(false);
+                    }}
+                    variant="outline"
+                    className="flex items-center justify-start px-4 py-3 h-auto bg-transparent border-secondary-foreground/20 hover:bg-secondary-foreground/10"
+                  >
+                    <span>Requests</span>
+                  </Button>
+
+                  <Button
+                    onClick={() => {
+                      navigate(ROUTES.REVIEW_APPROVED);
+                      setIsOpen(false);
+                    }}
+                    variant="outline"
+                    className="flex items-center justify-start px-4 py-3 h-auto bg-transparent border-secondary-foreground/20 hover:bg-secondary-foreground/10"
+                  >
+                    <span>Approved</span>
+                  </Button>
+
+                  <Button
+                    onClick={() => {
+                      navigate(ROUTES.REVIEW_APPEALS);
+                      setIsOpen(false);
+                    }}
+                    variant="outline"
+                    className="flex items-center justify-start px-4 py-3 h-auto bg-transparent border-secondary-foreground/20 hover:bg-secondary-foreground/10"
+                  >
+                    <span>Appeals</span>
+                  </Button>
+                </>
               )}
 
               <Button

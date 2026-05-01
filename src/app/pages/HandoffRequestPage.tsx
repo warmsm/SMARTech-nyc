@@ -4,17 +4,36 @@ import { Card, CardContent } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
 import { Input } from "@/app/components/ui/input";
-import { USER_CREDENTIALS } from "@/contexts/AuthContext";
 import { useAccessRequests } from "@/contexts/AccessRequestsContext";
+import { api } from "@/utils/supabase/client";
 
+const OFFICE_ACCOUNTS: Record<string, { office: string }> = {
+  "central.office@smartech.ph": { office: "Central NYC" },
+  "youth.organization@smartech.ph": {
+    office: "Youth Organization Registration Program (YORP)",
+  },
+  "sangguniang.kabataan@smartech.ph": {
+    office: "NYC Sangguniang Kabataan",
+  },
+  "ncr.ivb@smartech.ph": { office: "NYC NCR and MIMAROPA" },
+  "car.i@smartech.ph": { office: "NYC CAR and Region 1" },
+  "ii.iii@smartech.ph": { office: "NYC Regions 2 and 3" },
+  "iv-a@smartech.ph": { office: "NYC CALABARZON" },
+  "v@smartech.ph": { office: "NYC Region 5" },
+  "vi@smartech.ph": { office: "NYC Region 6" },
+  "vii.viii@smartech.ph": { office: "NYC Regions 7 and 8" },
+  "ix.xii@smartech.ph": { office: "NYC Regions 9 and 12" },
+  "x.caraga@smartech.ph": {
+    office: "NYC Region 10 and CARAGA",
+  },
+  "xi.barmm@smartech.ph": { office: "NYC Region 11 and BARMM" },
+};
 export default function HandoffRequestPage() {
   const navigate = useNavigate();
   const { addRequest } = useAccessRequests();
 
   const [email, setEmail] = useState("");
-  const [step, setStep] = useState<
-    "email" | "done"
-  >("email");
+  const [step, setStep] = useState<"email" | "done">("email");
 
   const [form, setForm] = useState({
     newName: "",
@@ -32,12 +51,18 @@ export default function HandoffRequestPage() {
       return;
     }
 
-    const user =
-      USER_CREDENTIALS[email as keyof typeof USER_CREDENTIALS];
+    const normalizedEmail = email.trim().toLowerCase();
 
-    if (!user) {
+    let profile: { email: string; office: string };
+
+    try {
+      const response = await api.get(
+        `/profiles/by-email/${encodeURIComponent(normalizedEmail)}`,
+      );
+      profile = response.profile;
+    } catch {
       setError(
-        "Email not recognized. Please use the assigned NYC office email.",
+        "Email not recognized. Please use an approved office email.",
       );
       return;
     }
@@ -52,23 +77,18 @@ export default function HandoffRequestPage() {
       return;
     }
 
-    try {
-      await addRequest({
-        id: crypto.randomUUID(),
-        type: "handoff",
-        officeEmail: email,
-        officeName: user.office,
-        status: "Pending",
-        submittedAt: new Date().toLocaleString(),
-        reason: form.reason,
-        newAssignedPerson: form.newName,
-      });
+    await addRequest({
+      id: crypto.randomUUID(),
+      type: "handoff",
+      officeEmail: email,
+      officeName: profile.office,
+      status: "Pending",
+      submittedAt: new Date().toLocaleString(),
+      reason: form.reason,
+      newAssignedPerson: form.newName,
+    });
 
-      setStep("done");
-    } catch (error) {
-      console.error("Error submitting request:", error);
-      setError("Failed to submit request. Please try again.");
-    }
+    setStep("done");
   };
 
   return (
@@ -83,7 +103,9 @@ export default function HandoffRequestPage() {
             {step === "email" && (
               <>
                 <p className="text-white/70 text-sm">
-                  Submit a handoff request for account transfer. Your request will be sent to NYC Central Office for approval.
+                  Submit a handoff request for account transfer.
+                  Your request will be sent to NYC Central
+                  Office for approval.
                 </p>
 
                 <form
@@ -140,7 +162,10 @@ export default function HandoffRequestPage() {
                     </div>
                   )}
 
-                  <Button type="submit" className="w-full bg-[#FFFF00] text-[#000033]">
+                  <Button
+                    type="submit"
+                    className="w-full bg-[#FFFF00] text-[#000033]"
+                  >
                     Submit Request
                   </Button>
                 </form>
@@ -158,7 +183,8 @@ export default function HandoffRequestPage() {
             {step === "done" && (
               <>
                 <p className="text-green-400 text-sm">
-                  Your handoff request has been submitted successfully!
+                  Your handoff request has been submitted
+                  successfully!
                 </p>
 
                 <div className="bg-white/10 border border-white/20 rounded-lg p-4 text-left space-y-3">
@@ -184,8 +210,12 @@ export default function HandoffRequestPage() {
 
                 <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-4">
                   <p className="text-sm text-yellow-200">
-                    <strong>Next Steps:</strong><br />
-                    Once approved by NYC Central Office, you will receive a verification code. Use that code to reset your password and complete the handoff process.
+                    <strong>Next Steps:</strong>
+                    <br />
+                    Once approved by NYC Central Office, you
+                    will receive a verification code. Use that
+                    code to reset your password and complete the
+                    handoff process.
                   </p>
                 </div>
 

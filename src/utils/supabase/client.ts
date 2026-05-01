@@ -1,17 +1,16 @@
-/// <reference types="vite/client" />
-
-const projectId = import.meta.env.VITE_SUPABASE_PROJECT_ID;
-const publicAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-const serverUrl = `https://${projectId}.supabase.co/functions/v1/make-server-e75a6481`;
+// Supabase Edge Functions URL
+const serverUrl =
+  "https://bsoxrepklddhxmpskbyk.supabase.co/functions/v1/make-server-e75a6481";
+const publicAnonKey =
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzb3hyZXBrbGRkaHhtcHNrYnlrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY2ODk0OTQsImV4cCI6MjA5MjI2NTQ5NH0.F90mf-17RRbW4cNwc51sGlCwAe2EAVROPmkFovs_WVc";
 
 export const api = {
   async get(endpoint: string) {
     const response = await fetch(`${serverUrl}${endpoint}`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Authorization': `Bearer ${publicAnonKey}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${publicAnonKey}`,
       },
     });
 
@@ -36,10 +35,10 @@ export const api = {
 
   async post(endpoint: string, data: any) {
     const response = await fetch(`${serverUrl}${endpoint}`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Authorization': `Bearer ${publicAnonKey}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${publicAnonKey}`,
       },
       body: JSON.stringify(data),
     });
@@ -54,10 +53,10 @@ export const api = {
 
   async put(endpoint: string, data: any) {
     const response = await fetch(`${serverUrl}${endpoint}`, {
-      method: 'PUT',
+      method: "PUT",
       headers: {
-        'Authorization': `Bearer ${publicAnonKey}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${publicAnonKey}`,
       },
       body: JSON.stringify(data),
     });
@@ -72,10 +71,10 @@ export const api = {
 
   async delete(endpoint: string) {
     const response = await fetch(`${serverUrl}${endpoint}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: {
-        'Authorization': `Bearer ${publicAnonKey}`,
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${publicAnonKey}`,
       },
     });
 

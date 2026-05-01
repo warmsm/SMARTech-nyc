@@ -5,180 +5,143 @@ import {
   ReactNode,
   useEffect,
 } from "react";
-import { api } from "@/utils/supabase/client";
+import type { Session, User } from "@supabase/supabase-js";
+import { supabase } from "@/utils/supabase/supabaseClient";
 
-export type Email =
-  | "central.office@smartech.ph"
-  | "youth.organization@smartech.ph"
-  | "sangguniang.kabataan@smartech.ph"
-  | "ncr.ivb@smartech.ph"
-  | "car.i@smartech.ph"
-  | "ii.iii@smartech.ph"
-  | "iv-a@smartech.ph"
-  | "v@smartech.ph"
-  | "vi@smartech.ph"
-  | "vii.viii@smartech.ph"
-  | "ix.xii@smartech.ph"
-  | "x.caraga@smartech.ph"
-  | "xi.barmm@smartech.ph";
+export type Office = string;
 
-export type Office =
-  | "Central NYC"
-  | "Youth Organization Registration Program (YORP)"
-  | "NYC Sangguniang Kabataan"
-  | "NYC NCR and MIMAROPA"
-  | "NYC CAR and Region 1"
-  | "NYC Regions 2 and 3"
-  | "NYC CALABARZON"
-  | "NYC Region 5"
-  | "NYC Region 6"
-  | "NYC Regions 7 and 8"
-  | "NYC Regions 9 and 12"
-  | "NYC Region 10 and CARAGA"
-  | "NYC Region 11 and BARMM";
+export type Role = "admin" | "user";
+
+export interface Profile {
+  id: string;
+  email: string;
+  office: Office;
+  role: Role;
+}
 
 interface AuthContextType {
+  user: User | null;
+  session: Session | null;
+  profile: Profile | null;
   currentOffice: Office | null;
-  login: (email: string, password: string) => Promise<boolean>;
-  logout: () => void;
   isAuthenticated: boolean;
-  updatePassword: (email: string, newPassword: string) => Promise<void>;
+  isAdmin: boolean;
+  isLoading: boolean;
+  login: (email: string, password: string) => Promise<boolean>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(
   undefined,
 );
 
-export const USER_CREDENTIALS: Record<
-  Email,
-  { password: string; office: Office }
-> = {
-  "central.office@smartech.ph": {
-    password: "centraloffice",
-    office: "Central NYC",
-  },
-  "youth.organization@smartech.ph": {
-    password: "youthorganization",
-    office: "Youth Organization Registration Program (YORP)",
-  },
-  "sangguniang.kabataan@smartech.ph": {
-    password: "sangguniangkabataan",
-    office: "NYC Sangguniang Kabataan",
-  },
-  "ncr.ivb@smartech.ph": {
-    password: "ncrmimaropa",
-    office: "NYC NCR and MIMAROPA",
-  },
-  "car.i@smartech.ph": {
-    password: "carilocos",
-    office: "NYC CAR and Region 1",
-  },
-  "ii.iii@smartech.ph": {
-    password: "cagayancentral",
-    office: "NYC Regions 2 and 3",
-  },
-  "iv-a@smartech.ph": {
-    password: "calabarzon",
-    office: "NYC CALABARZON",
-  },
-  "v@smartech.ph": {
-    password: "bicol",
-    office: "NYC Region 5",
-  },
-  "vi@smartech.ph": {
-    password: "westvis",
-    office: "NYC Region 6",
-  },
-  "vii.viii@smartech.ph": {
-    password: "centeasvis",
-    office: "NYC Regions 7 and 8",
-  },
-  "ix.xii@smartech.ph": {
-    password: "zambsocc",
-    office: "NYC Regions 9 and 12",
-  },
-  "x.caraga@smartech.ph": {
-    password: "northcaraga",
-    office: "NYC Region 10 and CARAGA",
-  },
-  "xi.barmm@smartech.ph": {
-    password: "davaobrmm",
-    office: "NYC Region 11 and BARMM",
-  },
-};
-
 export function AuthProvider({
   children,
 }: {
   children: ReactNode;
 }) {
-  const [currentOffice, setCurrentOffice] =
-    useState<Office | null>(null);
-  const [customPasswords, setCustomPasswords] = useState<
-    Record<string, string>
-  >({});
+  const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const loadProfile = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, email, office, role")
+      .eq("id", userId)
+      .maybeSingle();
 
-  // Load authentication state from localStorage on mount
-  useEffect(() => {
-    const savedOffice = localStorage.getItem("currentOffice");
-    if (savedOffice) {
-      setCurrentOffice(savedOffice as Office);
+    if (data && !error) {
+      setProfile(data as Profile);
+    } else {
+      setProfile(null);
     }
+  };
+
+  useEffect(() => {
+    const initializeAuth = async () => {
+      setIsLoading(true);
+
+      const { data } = await supabase.auth.getSession();
+
+      setSession(data.session);
+      setUser(data.session?.user ?? null);
+
+      if (data.session?.user) {
+        await loadProfile(data.session.user.id);
+      }
+
+      setIsLoading(false);
+    };
+
+    initializeAuth();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(
+      async (_event, newSession) => {
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+
+        if (newSession?.user) {
+          await loadProfile(newSession.user.id);
+        } else {
+          setProfile(null);
+        }
+      },
+    );
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    const user = USER_CREDENTIALS[email as Email];
+  const login = async (
+    email: string,
+    password: string,
+  ): Promise<boolean> => {
+    const { data, error } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (!user) return false;
-
-    try {
-      // Fetch custom password from server
-      const response = await api.get(`/auth/password/${encodeURIComponent(email)}`);
-      const customPassword = response.customPassword;
-
-      // Check if there's a custom password set for this email
-      const actualPassword = customPassword || user.password;
-
-      if (actualPassword !== password) return false;
-
-      setCurrentOffice(user.office);
-      localStorage.setItem("currentOffice", user.office);
-
-      return true;
-    } catch (error) {
-      console.error("Error during login:", error);
-      // Fallback to default password if server fails
-      if (user.password !== password) return false;
-
-      setCurrentOffice(user.office);
-      localStorage.setItem("currentOffice", user.office);
-      return true;
+    if (error || !data.user || !data.session) {
+      return false;
     }
+
+    setUser(data.user);
+    setSession(data.session);
+    await loadProfile(data.user.id);
+
+    return true;
   };
 
-  const logout = () => {
-    setCurrentOffice(null);
-    localStorage.removeItem("currentOffice");
+  const logout = async () => {
+    await supabase.auth.signOut();
+
+    setUser(null);
+    setSession(null);
+    setProfile(null);
   };
 
-  const updatePassword = async (email: string, newPassword: string) => {
-    try {
-      await api.post("/auth/update-password", { email, newPassword });
-      setCustomPasswords((prev) => ({
-        ...prev,
-        [email]: newPassword,
-      }));
-    } catch (error) {
-      console.error("Error updating password:", error);
-      throw error;
-    }
-  };
-
-  const isAuthenticated = currentOffice !== null;
+  const currentOffice = profile?.office ?? null;
+  const isAuthenticated = Boolean(session && user);
+  const isAdmin = profile?.role === "admin";
 
   return (
     <AuthContext.Provider
-      value={{ currentOffice, login, logout, isAuthenticated, updatePassword }}
+      value={{
+        user,
+        session,
+        profile,
+        currentOffice,
+        isAuthenticated,
+        isAdmin,
+        isLoading,
+        login,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>
@@ -187,10 +150,19 @@ export function AuthProvider({
 
 export function useAuth() {
   const context = useContext(AuthContext);
+
   if (context === undefined) {
-    throw new Error(
-      "useAuth must be used within an AuthProvider",
-    );
+    return {
+      user: null,
+      session: null,
+      profile: null,
+      currentOffice: null,
+      isAuthenticated: false,
+      isAdmin: false,
+      login: async () => false,
+      logout: async () => {},
+    };
   }
+
   return context;
 }

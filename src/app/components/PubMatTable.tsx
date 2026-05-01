@@ -8,7 +8,12 @@ import {
 } from "@/app/components/ui/table";
 import { AuditPost } from "@/data/mockData";
 import { Button } from "@/app/components/ui/button";
-import { MessageSquare, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import {
+  MessageSquare,
+  ArrowUpDown,
+  ArrowUp,
+  ArrowDown,
+} from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { usePosts } from "@/contexts/PostsContext";
 import { useState, useMemo } from "react";
@@ -17,18 +22,35 @@ interface PubMatTableProps {
   posts: AuditPost[];
 }
 
-type SortColumn = "id" | "platform" | "status" | "reviewStatus" | "appealStatus" | "date" | "actions";
+type SortColumn =
+  | "id"
+  | "platform"
+  | "status"
+  | "reviewStatus"
+  | "appealStatus"
+  | "date"
+  | "actions";
 type SortDirection = "asc" | "desc";
 
 export function PubMatTable({ posts }: PubMatTableProps) {
   const { currentOffice } = useAuth();
   const { appealPost } = usePosts();
-  const [appealingPostId, setAppealingPostId] = useState<string | null>(null);
-  const [sortColumn, setSortColumn] = useState<SortColumn | null>(null);
-  const [sortDirection, setSortDirection] = useState<SortDirection>("asc");
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [expandedReason, setExpandedReason] = useState<string | null>(null);
-  const [expandedRemarks, setExpandedRemarks] = useState<string | null>(null);
+  const [appealingPostId, setAppealingPostId] = useState<
+    string | null
+  >(null);
+  const [sortColumn, setSortColumn] =
+    useState<SortColumn | null>(null);
+  const [sortDirection, setSortDirection] =
+    useState<SortDirection>("asc");
+  const [selectedImage, setSelectedImage] = useState<
+    string | null
+  >(null);
+  const [expandedReason, setExpandedReason] = useState<
+    string | null
+  >(null);
+  const [expandedRemarks, setExpandedRemarks] = useState<
+    string | null
+  >(null);
 
   const isCentral = currentOffice === "Central NYC";
 
@@ -41,7 +63,9 @@ export function PubMatTable({ posts }: PubMatTableProps) {
 
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
-      setSortDirection(sortDirection === "asc" ? "desc" : "asc");
+      setSortDirection(
+        sortDirection === "asc" ? "desc" : "asc",
+      );
     } else {
       setSortColumn(column);
       setSortDirection("asc");
@@ -81,16 +105,27 @@ export function PubMatTable({ posts }: PubMatTableProps) {
           bValue = new Date(b.submissionDate || b.date);
           break;
         case "actions":
-          // Sort by whether action is available (rejected & not appealed = 1, others = 0)
-          aValue = (a.status === "Rejected" && (!a.appealStatus || a.appealStatus === "Not Appealed")) ? 1 : 0;
-          bValue = (b.status === "Rejected" && (!b.appealStatus || b.appealStatus === "Not Appealed")) ? 1 : 0;
+          aValue =
+            a.status === "Rejected" &&
+            (!a.appealStatus ||
+              a.appealStatus === "Not Appealed")
+              ? 1
+              : 0;
+          bValue =
+            b.status === "Rejected" &&
+            (!b.appealStatus ||
+              b.appealStatus === "Not Appealed")
+              ? 1
+              : 0;
           break;
         default:
           return 0;
       }
 
-      if (aValue < bValue) return sortDirection === "asc" ? -1 : 1;
-      if (aValue > bValue) return sortDirection === "asc" ? 1 : -1;
+      if (aValue < bValue)
+        return sortDirection === "asc" ? -1 : 1;
+      if (aValue > bValue)
+        return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
   }, [posts, sortColumn, sortDirection]);
@@ -107,13 +142,17 @@ export function PubMatTable({ posts }: PubMatTableProps) {
   };
 
   const handleAppeal = async (postId: string) => {
-    const reason = prompt("Please provide a reason for appealing this rejection:");
+    const reason = prompt(
+      "Please provide a reason for appealing this rejection:",
+    );
     if (!reason) return;
 
     try {
       setAppealingPostId(postId);
       await appealPost(postId, reason);
-      alert("Appeal submitted successfully! Central office will review your appeal.");
+      alert(
+        "Appeal submitted successfully! Central office will review your appeal.",
+      );
     } catch (error) {
       console.error("Error submitting appeal:", error);
       alert("Failed to submit appeal. Please try again.");
@@ -138,7 +177,19 @@ export function PubMatTable({ posts }: PubMatTableProps) {
   };
 
   const getReviewStatusBadge = (post: AuditPost) => {
-    if (!post.centralReviewStatus || post.centralReviewStatus === "Pending Review") {
+    const isSystemRejected = post.status === "Rejected";
+    const hasNotAppealed =
+      !post.appealStatus ||
+      post.appealStatus === "Not Appealed";
+
+    if (isSystemRejected && hasNotAppealed) {
+      return <span className="text-xs text-gray-500">-</span>;
+    }
+
+    if (
+      !post.centralReviewStatus ||
+      post.centralReviewStatus === "Pending Review"
+    ) {
       return (
         <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-yellow-100 text-yellow-800">
           Pending Review
@@ -154,15 +205,23 @@ export function PubMatTable({ posts }: PubMatTableProps) {
       );
     }
 
+    const label =
+      post.appealStatus === "Appeal Rejected"
+        ? "Rejected"
+        : "For Revision";
+
     return (
       <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold bg-red-100 text-red-800">
-        For Revision
+        {label}
       </span>
     );
   };
 
   const getAppealStatusBadge = (post: AuditPost) => {
-    if (!post.appealStatus || post.appealStatus === "Not Appealed") {
+    if (
+      !post.appealStatus ||
+      post.appealStatus === "Not Appealed"
+    ) {
       return <span className="text-xs text-gray-500">-</span>;
     }
 
@@ -191,6 +250,7 @@ export function PubMatTable({ posts }: PubMatTableProps) {
 
   return (
     <>
+      {/* Modals remain the same */}
       {selectedImage && (
         <div
           className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
@@ -218,8 +278,12 @@ export function PubMatTable({ posts }: PubMatTableProps) {
           onClick={() => setExpandedReason(null)}
         >
           <div className="relative max-w-2xl w-full bg-white rounded-lg p-6">
-            <h3 className="text-lg font-bold mb-4">Rejection Reason</h3>
-            <p className="text-sm whitespace-pre-wrap">{expandedReason}</p>
+            <h3 className="text-lg font-bold mb-4">
+              Review Comment
+            </h3>
+            <p className="text-sm whitespace-pre-wrap">
+              {expandedReason}
+            </p>
             <button
               onClick={() => setExpandedReason(null)}
               className="absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 text-black rounded-full p-2 w-8 h-8 flex items-center justify-center font-bold"
@@ -236,8 +300,12 @@ export function PubMatTable({ posts }: PubMatTableProps) {
           onClick={() => setExpandedRemarks(null)}
         >
           <div className="relative max-w-2xl w-full bg-white rounded-lg p-6">
-            <h3 className="text-lg font-bold mb-4">Full Remarks</h3>
-            <p className="text-sm whitespace-pre-wrap">{expandedRemarks}</p>
+            <h3 className="text-lg font-bold mb-4">
+              Full Remarks
+            </h3>
+            <p className="text-sm whitespace-pre-wrap">
+              {expandedRemarks}
+            </p>
             <button
               onClick={() => setExpandedRemarks(null)}
               className="absolute top-2 right-2 bg-gray-200 hover:bg-gray-300 text-black rounded-full p-2 w-8 h-8 flex items-center justify-center font-bold"
@@ -250,183 +318,243 @@ export function PubMatTable({ posts }: PubMatTableProps) {
 
       <div className="rounded-md border overflow-x-auto">
         <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead
-              className="cursor-pointer hover:bg-muted/50"
-              onClick={() => handleSort("id")}
-            >
-              Pubmat ID
-              <SortIcon column="id" />
-            </TableHead>
-            <TableHead
-              className="cursor-pointer hover:bg-muted/50"
-              onClick={() => handleSort("platform")}
-            >
-              Platform
-              <SortIcon column="platform" />
-            </TableHead>
-            <TableHead>Pubmat</TableHead>
-            <TableHead
-              className="cursor-pointer hover:bg-muted/50"
-              onClick={() => handleSort("status")}
-            >
-              Status
-              <SortIcon column="status" />
-            </TableHead>
-            <TableHead>Remarks</TableHead>
-            {!isCentral && (
+          <TableHeader>
+            <TableRow>
+              {/* 1. Pubmat */}
+              <TableHead>Pubmat</TableHead>
+
+              {/* 2. Status */}
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("reviewStatus")}
+                onClick={() => handleSort("status")}
               >
-                Review Status
-                <SortIcon column="reviewStatus" />
+                Status
+                <SortIcon column="status" />
               </TableHead>
-            )}
-            {!isCentral && (
+
+              {/* 3. Remarks */}
+              <TableHead>Remarks</TableHead>
+
+              {!isCentral && (
+                <>
+                  {/* 4. Review Status */}
+                  <TableHead
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleSort("reviewStatus")}
+                  >
+                    Review Status
+                    <SortIcon column="reviewStatus" />
+                  </TableHead>
+
+                  {/* 5. Appeal Status */}
+                  <TableHead
+                    className="cursor-pointer hover:bg-muted/50"
+                    onClick={() => handleSort("appealStatus")}
+                  >
+                    Appeal Status
+                    <SortIcon column="appealStatus" />
+                  </TableHead>
+
+                  {/* 6. Review Comment (Renamed) */}
+                  <TableHead>Review Comment</TableHead>
+                </>
+              )}
+
+              {/* 7. Posting Date (Renamed) */}
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("appealStatus")}
+                onClick={() => handleSort("date")}
               >
-                Appeal Status
-                <SortIcon column="appealStatus" />
+                Posting Date
+                <SortIcon column="date" />
               </TableHead>
-            )}
-            {!isCentral && <TableHead>Rejection Reason</TableHead>}
-            <TableHead
-              className="cursor-pointer hover:bg-muted/50"
-              onClick={() => handleSort("date")}
-            >
-              Date Submitted
-              <SortIcon column="date" />
-            </TableHead>
-            {!isCentral && (
+
+              {/* 8. Platforms */}
               <TableHead
                 className="cursor-pointer hover:bg-muted/50"
-                onClick={() => handleSort("actions")}
+                onClick={() => handleSort("platform")}
               >
-                Actions
-                <SortIcon column="actions" />
+                Platform/s
+                <SortIcon column="platform" />
               </TableHead>
-            )}
-          </TableRow>
-        </TableHeader>
 
-        <TableBody>
-          {sortedPosts.map((post) => (
-            <TableRow key={post.id}>
-              <TableCell className="font-medium">
-                {getPubmatId(post.id)}
-              </TableCell>
+              {/* 9. Pubmat ID */}
+              <TableHead
+                className="cursor-pointer hover:bg-muted/50"
+                onClick={() => handleSort("id")}
+              >
+                Pubmat ID
+                <SortIcon column="id" />
+              </TableHead>
 
-              <TableCell>
-                {formatPlatforms(post.platform)}
-              </TableCell>
-
-              <TableCell>
-                <div className="flex items-start gap-3">
-                  {post.thumbnail && (
-                    <img
-                      src={post.thumbnail}
-                      alt={post.id}
-                      className="h-20 w-20 rounded object-cover cursor-pointer hover:opacity-80 transition-opacity"
-                      onClick={() => setSelectedImage(post.thumbnail!)}
-                    />
-                  )}
-                </div>
-              </TableCell>
-
-              <TableCell>
-                <span
-                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(
-                    post.status,
-                  )}`}
+              {!isCentral && (
+                <TableHead
+                  className="cursor-pointer hover:bg-muted/50"
+                  onClick={() => handleSort("actions")}
                 >
-                  {post.status}
-                </span>
-              </TableCell>
-
-              <TableCell>
-                <div className="max-w-md text-sm text-muted-foreground">
-                  <div className="line-clamp-2">
-                    {post.remarks || post.recommendation}
-                  </div>
-                  {(post.remarks || post.recommendation) && (post.remarks || post.recommendation)!.length > 100 && (
-                    <button
-                      onClick={() => setExpandedRemarks(post.remarks || post.recommendation || "")}
-                      className="text-primary hover:underline text-xs mt-1"
-                    >
-                      See more
-                    </button>
-                  )}
-                </div>
-              </TableCell>
-
-              {!isCentral && (
-                <TableCell>{getReviewStatusBadge(post)}</TableCell>
+                  Action
+                  <SortIcon column="actions" />
+                </TableHead>
               )}
+            </TableRow>
+          </TableHeader>
 
-              {!isCentral && (
-                <TableCell>{getAppealStatusBadge(post)}</TableCell>
-              )}
-
-              {!isCentral && (
+          <TableBody>
+            {sortedPosts.map((post) => (
+              <TableRow key={post.id}>
+                {/* 1. Pubmat */}
                 <TableCell>
-                  {post.centralReviewComment ? (
-                    <div className="max-w-md text-sm text-muted-foreground">
-                      <div className="line-clamp-2">
-                        {post.centralReviewComment}
-                      </div>
-                      {post.centralReviewComment.length > 100 && (
+                  <div className="flex items-start gap-3">
+                    {post.thumbnail && (
+                      <img
+                        src={post.thumbnail}
+                        alt={post.id}
+                        className="h-20 w-20 rounded object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                        onClick={() =>
+                          setSelectedImage(post.thumbnail!)
+                        }
+                      />
+                    )}
+                  </div>
+                </TableCell>
+
+                {/* 2. Status */}
+                <TableCell>
+                  <span
+                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${getStatusColor(
+                      post.status,
+                    )}`}
+                  >
+                    {post.status}
+                  </span>
+                </TableCell>
+
+                {/* 3. Remarks */}
+                <TableCell>
+                  <div className="max-w-md text-sm text-muted-foreground">
+                    <div className="line-clamp-2">
+                      {post.remarks || post.recommendation}
+                    </div>
+                    {(post.remarks || post.recommendation) &&
+                      (post.remarks || post.recommendation)!
+                        .length > 100 && (
                         <button
-                          onClick={() => setExpandedReason(post.centralReviewComment || "")}
+                          onClick={() =>
+                            setExpandedRemarks(
+                              post.remarks ||
+                                post.recommendation ||
+                                "",
+                            )
+                          }
                           className="text-primary hover:underline text-xs mt-1"
                         >
                           See more
                         </button>
                       )}
-                    </div>
-                  ) : (
-                    <span className="text-xs text-gray-500">-</span>
-                  )}
+                  </div>
                 </TableCell>
-              )}
 
-              <TableCell className="text-sm">
-                {post.submissionDate || post.date}
-              </TableCell>
+                {!isCentral && (
+                  <>
+                    {/* 4. Review Status */}
+                    <TableCell>
+                      {getReviewStatusBadge(post)}
+                    </TableCell>
 
-              {!isCentral && (
+                    {/* 5. Appeal Status */}
+                    <TableCell>
+                      {getAppealStatusBadge(post)}
+                    </TableCell>
+
+                    {/* 6. Review Comment */}
+                    <TableCell>
+                      {post.centralReviewComment ? (
+                        <div className="max-w-md text-sm text-muted-foreground">
+                          <div className="line-clamp-2">
+                            {post.centralReviewComment}
+                          </div>
+                          {post.centralReviewComment.length >
+                            100 && (
+                            <button
+                              onClick={() =>
+                                setExpandedReason(
+                                  post.centralReviewComment ||
+                                    "",
+                                )
+                              }
+                              className="text-primary hover:underline text-xs mt-1"
+                            >
+                              See more
+                            </button>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-xs text-gray-500">
+                          -
+                        </span>
+                      )}
+                    </TableCell>
+                  </>
+                )}
+
+                {/* 7. Posting Date */}
+                <TableCell className="text-sm">
+                  {post.submissionDate || post.date}
+                </TableCell>
+
+                {/* 8. Platforms */}
                 <TableCell>
-                  {post.status === "Rejected" && (!post.appealStatus || post.appealStatus === "Not Appealed") && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleAppeal(post.id)}
-                      disabled={appealingPostId === post.id}
-                      className="text-xs"
-                    >
-                      <MessageSquare className="h-3 w-3 mr-1" />
-                      {appealingPostId === post.id ? "Submitting..." : "Appeal"}
-                    </Button>
-                  )}
-                  {post.appealStatus === "Appealed" && (
-                    <span className="text-xs text-yellow-600">Appeal Pending</span>
-                  )}
-                  {post.appealStatus === "Appeal Approved" && (
-                    <span className="text-xs text-green-600">Appeal Approved</span>
-                  )}
-                  {post.appealStatus === "Appeal Rejected" && (
-                    <span className="text-xs text-red-600">Appeal Rejected</span>
-                  )}
+                  {formatPlatforms(post.platform)}
                 </TableCell>
-              )}
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </div>
+
+                {/* 9. Pubmat ID */}
+                <TableCell className="font-medium">
+                  {getPubmatId(post.id)}
+                </TableCell>
+
+                {!isCentral && (
+                  <TableCell>
+                    {post.status === "Rejected" &&
+                      (!post.appealStatus ||
+                        post.appealStatus ===
+                          "Not Appealed") && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleAppeal(post.id)}
+                          disabled={appealingPostId === post.id}
+                          className="text-xs"
+                        >
+                          <MessageSquare className="h-3 w-3 mr-1" />
+                          {appealingPostId === post.id
+                            ? "Submitting..."
+                            : "Appeal"}
+                        </Button>
+                      )}
+                    {post.appealStatus === "Appealed" && (
+                      <span className="text-xs text-yellow-600">
+                        Appeal Pending
+                      </span>
+                    )}
+                    {post.appealStatus ===
+                      "Appeal Approved" && (
+                      <span className="text-xs text-green-600">
+                        Appeal Approved
+                      </span>
+                    )}
+                    {post.appealStatus ===
+                      "Appeal Rejected" && (
+                      <span className="text-xs text-red-600">
+                        Appeal Rejected
+                      </span>
+                    )}
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     </>
   );
 }

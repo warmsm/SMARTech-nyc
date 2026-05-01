@@ -7,7 +7,10 @@ import {
 } from "react";
 import { api } from "@/utils/supabase/client";
 
-export type RequestType = "forgot-password" | "handoff" | "create-account";
+export type RequestType =
+  | "forgot-password"
+  | "handoff"
+  | "create-account";
 export type RequestStatus = "Pending" | "Approved" | "Rejected";
 
 export interface AccessRequest {
@@ -31,9 +34,12 @@ interface AccessRequestsContextType {
   updateRequestStatus: (
     id: string,
     status: RequestStatus,
-    verificationCode?: string
+    verificationCode?: string,
+    extraFields?: Partial<AccessRequest>,
   ) => Promise<void>;
-  getRequestByCode: (code: string) => Promise<AccessRequest | null>;
+  getRequestByCode: (
+    code: string,
+  ) => Promise<AccessRequest | null>;
 }
 
 const AccessRequestsContext = createContext<
@@ -53,8 +59,13 @@ export function AccessRequestsProvider({
       try {
         const response = await api.get("/access-requests");
         setRequests(response.requests || []);
-      } catch (error) {
-        console.error("Error loading access requests from server:", error);
+      } catch (error: any) {
+        console.log(
+          "⚠️ Server unavailable - starting with empty access requests",
+        );
+        console.log(
+          "Note: Deploy the Supabase Edge Function to enable server sync",
+        );
         setRequests([]);
       }
     };
@@ -62,51 +73,104 @@ export function AccessRequestsProvider({
     fetchRequests();
   }, []);
 
-  const addRequest = async (request: AccessRequest): Promise<void> => {
+  const addRequest = async (
+    request: AccessRequest,
+  ): Promise<void> => {
     try {
       await api.post("/access-requests", request);
-      setRequests((prev) => [request, ...prev]);
     } catch (error) {
-      console.error("Error adding access request:", error);
-      throw error;
+      console.log(
+        "⚠️ Server unavailable - request saved locally only",
+      );
     }
+
+    // Always update local state
+    setRequests((prev) => [request, ...prev]);
   };
 
   const updateRequestStatus = async (
     id: string,
     status: RequestStatus,
-    verificationCode?: string
+    verificationCode?: string,
+    extraFields?: Partial<AccessRequest>,
   ): Promise<void> => {
     try {
-      await api.put(`/access-requests/${id}`, { status, verificationCode });
-
-      // Calculate expiration time (15 minutes from now) if verification code is provided
-      let verificationCodeExpiresAt;
-      if (verificationCode) {
-        const expirationDate = new Date();
-        expirationDate.setMinutes(expirationDate.getMinutes() + 15);
-        verificationCodeExpiresAt = expirationDate.toISOString();
-      }
-
-      setRequests((prev) =>
-        prev.map((req) =>
-          req.id === id ? { ...req, status, verificationCode, verificationCodeExpiresAt } : req
-        )
-      );
+      await api.put(`/access-requests/${id}`, {
+        status,
+        verificationCode,
+      });
     } catch (error) {
-      console.error("Error updating access request:", error);
-      throw error;
+      console.log(
+        "⚠️ Server unavailable - request status updated locally only",
+      );
     }
+
+    // Always update local state
+    let verificationCodeExpiresAt: string | undefined;
+
+    if (verificationCode) {
+      const expirationDate = new Date();
+      expirationDate.setMinutes(
+        expirationDate.getMinutes() + 15,
+      );
+      verificationCodeExpiresAt = expirationDate.toISOString();
+    }
+
+    setRequests((prev) =>
+      prev.map((req) =>
+        req.id === id
+          ? {
+              ...req,
+              status,
+              verificationCode,
+              verificationCodeExpiresAt,
+              ...extraFields,
+            }
+          : req,
+      ),
+    );
   };
 
-  const getRequestByCode = async (code: string): Promise<AccessRequest | null> => {
+  const getRequestByCode = async (
+    code: string,
+  ): Promise<AccessRequest | null> => {
     try {
-      const response = await api.get(`/access-requests/verify/${code}`);
+      const response = await api.get(
+        `/access-requests/verify/${code}`,
+      );
       return response.request || null;
     } catch (error) {
-      console.error("Error verifying code:", error);
+      console.log(
+        "⚠️ Server unavailable - checking local requests",
+      );
+    }
+
+    // Fallback: search in local state
+    const request = requests.find(
+      (req) =>
+        req.verificationCode === code &&
+        req.status === "Approved",
+    );
+
+    if (!request) {
       return null;
     }
+
+    // Check if verification code has expired (15 minutes)
+    if (request.verificationCodeExpiresAt) {
+      const expirationTime = new Date(
+        request.verificationCodeExpiresAt,
+      );
+      const currentTime = new Date();
+
+      if (currentTime > expirationTime) {
+        throw new Error(
+          "Verification code has expired. Please request a new password reset.",
+        );
+      }
+    }
+
+    return request;
   };
 
   return (
@@ -128,7 +192,7 @@ export function useAccessRequests() {
 
   if (!context) {
     throw new Error(
-      "useAccessRequests must be used within an AccessRequestsProvider"
+      "useAccessRequests must be used within an AccessRequestsProvider",
     );
   }
 

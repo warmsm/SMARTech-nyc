@@ -5,17 +5,17 @@ import { Button } from "@/app/components/ui/button";
 import { Label } from "@/app/components/ui/label";
 import { Input } from "@/app/components/ui/input";
 import { useAccessRequests } from "@/contexts/AccessRequestsContext";
-import { useAuth } from "@/contexts/AuthContext";
+import { api } from "@/utils/supabase/client";
 
 export default function ResetPasswordPage() {
   const navigate = useNavigate();
   const { getRequestByCode } = useAccessRequests();
-  const { updatePassword } = useAuth();
-
   const [verificationCode, setVerificationCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [step, setStep] = useState<"code" | "password" | "done">("code");
+  const [step, setStep] = useState<
+    "code" | "password" | "done"
+  >("code");
   const [error, setError] = useState("");
   const [verifiedEmail, setVerifiedEmail] = useState("");
 
@@ -32,7 +32,9 @@ export default function ResetPasswordPage() {
       const request = await getRequestByCode(verificationCode);
 
       if (!request) {
-        setError("Invalid or expired verification code. Verification codes expire after 15 minutes.");
+        setError(
+          "Invalid or expired verification code. Verification codes expire after 15 minutes.",
+        );
         return;
       }
 
@@ -42,9 +44,13 @@ export default function ResetPasswordPage() {
       console.error("Error verifying code:", error);
       // Check if the error is due to expiration (HTTP 410)
       if (error.message && error.message.includes("expired")) {
-        setError("Verification code has expired. Codes are valid for 15 minutes. Please request a new password reset.");
+        setError(
+          "Verification code has expired. Codes are valid for 15 minutes. Please request a new password reset.",
+        );
       } else {
-        setError("Invalid or expired verification code. Please check and try again.");
+        setError(
+          "Invalid or expired verification code. Please check and try again.",
+        );
       }
     }
   };
@@ -69,7 +75,10 @@ export default function ResetPasswordPage() {
     }
 
     try {
-      await updatePassword(verifiedEmail, newPassword);
+      await api.post("/auth/update-password", {
+        email: verifiedEmail,
+        newPassword,
+      });
       setStep("done");
     } catch (error) {
       console.error("Error updating password:", error);
@@ -89,7 +98,8 @@ export default function ResetPasswordPage() {
             {step === "code" && (
               <>
                 <p className="text-white/70 text-sm">
-                  Enter the verification code provided by NYC Central Office.
+                  Enter the verification code provided by NYC
+                  Central Office.
                 </p>
 
                 <form
@@ -102,7 +112,9 @@ export default function ResetPasswordPage() {
                     </Label>
                     <Input
                       value={verificationCode}
-                      onChange={(e) => setVerificationCode(e.target.value)}
+                      onChange={(e) =>
+                        setVerificationCode(e.target.value)
+                      }
                       placeholder="Enter 6-digit code"
                       className="bg-[#0099FF] border-[#0099FF] text-black placeholder:text-black/80 text-center tracking-[0.3em]"
                       maxLength={6}
@@ -157,7 +169,9 @@ export default function ResetPasswordPage() {
                     <Input
                       type="password"
                       value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
+                      onChange={(e) =>
+                        setNewPassword(e.target.value)
+                      }
                       placeholder="Enter new password"
                       className="bg-[#0099FF] border-[#0099FF] text-black placeholder:text-black/80"
                     />
@@ -170,7 +184,9 @@ export default function ResetPasswordPage() {
                     <Input
                       type="password"
                       value={confirmPassword}
-                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      onChange={(e) =>
+                        setConfirmPassword(e.target.value)
+                      }
                       placeholder="Confirm new password"
                       className="bg-[#0099FF] border-[#0099FF] text-black placeholder:text-black/80"
                     />

@@ -3,19 +3,19 @@
 :root {
   --font-size: 16px;
   --background: #ffffff;
-  --foreground: #13294B;
+  --foreground: #13294b;
   --card: #ffffff;
-  --card-foreground: #13294B;
+  --card-foreground: #13294b;
   --popover: #ffffff;
-  --popover-foreground: #13294B;
-  --primary: #009FE3;
+  --popover-foreground: #13294b;
+  --primary: #009fe3;
   --primary-foreground: #ffffff;
-  --secondary: #13294B;
+  --secondary: #13294b;
   --secondary-foreground: #ffffff;
   --muted: #f5f5f5;
   --muted-foreground: #717182;
-  --accent: #FFD400;
-  --accent-foreground: #13294B;
+  --accent: #ffd400;
+  --accent-foreground: #13294b;
   --destructive: #d4183d;
   --destructive-foreground: #ffffff;
   --border: rgba(0, 0, 0, 0.1);
@@ -24,21 +24,21 @@
   --switch-background: #cbced4;
   --font-weight-medium: 500;
   --font-weight-normal: 400;
-  --ring: #009FE3;
-  --chart-1: #009FE3;
-  --chart-2: #13294B;
-  --chart-3: #FFD400;
-  --chart-4: #0077B6;
-  --chart-5: #FFC300;
+  --ring: #009fe3;
+  --chart-1: #009fe3;
+  --chart-2: #13294b;
+  --chart-3: #ffd400;
+  --chart-4: #0077b6;
+  --chart-5: #ffc300;
   --radius: 0.625rem;
-  --sidebar: #13294B;
+  --sidebar: #13294b;
   --sidebar-foreground: #ffffff;
-  --sidebar-primary: #009FE3;
+  --sidebar-primary: #009fe3;
   --sidebar-primary-foreground: #ffffff;
-  --sidebar-accent: #FFD400;
-  --sidebar-accent-foreground: #13294B;
+  --sidebar-accent: #ffd400;
+  --sidebar-accent-foreground: #13294b;
   --sidebar-border: rgba(255, 255, 255, 0.1);
-  --sidebar-ring: #009FE3;
+  --sidebar-ring: #009fe3;
 }
 
 .dark {
@@ -112,9 +112,13 @@
   --color-sidebar: var(--sidebar);
   --color-sidebar-foreground: var(--sidebar-foreground);
   --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary-foreground: var(
+    --sidebar-primary-foreground
+  );
   --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent-foreground: var(
+    --sidebar-accent-foreground
+  );
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 }
@@ -127,11 +131,6 @@
   body {
     @apply bg-background text-foreground;
   }
-
-  /**
-  * Default typography styles for HTML elements (h1-h4, p, label, button, input).
-  * These are in @layer base, so Tailwind utility classes (like text-sm, text-lg) automatically override them.
-  */
 
   html {
     font-size: var(--font-size);

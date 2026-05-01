@@ -12,6 +12,8 @@ import {
 import { Label } from "@/app/components/ui/label";
 import { Input } from "@/app/components/ui/input";
 import { LogIn } from "lucide-react";
+import { HelpButton } from "@/app/components/HelpButton";
+import { SmarTechLogo } from "@/app/components/SmarTechLogo";
 import nycLogo from "figma:asset/32e65005e1211eef2a5c6c89d5f1fa935cae4da4.png";
 
 export function LoginPage() {
@@ -44,7 +46,6 @@ export function LoginPage() {
         setPassword("");
       }
     } catch (error) {
-      console.error("Login error:", error);
       setError("An error occurred during login. Please try again.");
       setPassword("");
     }
@@ -52,6 +53,8 @@ export function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[#3391f7]/7 flex items-center justify-center p-4">
+      <HelpButton loginPageOnly={true} />
+      <SmarTechLogo />
       <div className="w-full max-w-md">
         {/* Login Card */}
         <Card className="bg-[#000033] border-[#000033] border-2">

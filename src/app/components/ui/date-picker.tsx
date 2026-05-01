@@ -8,17 +8,31 @@ interface DatePickerProps {
   date: Date | undefined;
   onDateChange: (date: Date | undefined) => void;
   placeholder?: string;
+  minDate?: Date;
 }
 
-export function DatePicker({ date, onDateChange, placeholder = "Pick a date" }: DatePickerProps) {
-  // Convert Date to YYYY-MM-DD format for input value
-  const dateValue = date ? date.toISOString().split('T')[0] : '';
+export function DatePicker({
+  date,
+  onDateChange,
+  placeholder = "Pick a date",
+  minDate,
+}: DatePickerProps) {
+  // Convert Date to YYYY-MM-DD format for input value (using local date components)
+  const dateValue = date
+    ? `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+    : "";
+  const minDateValue = minDate
+    ? `${minDate.getFullYear()}-${String(minDate.getMonth() + 1).padStart(2, "0")}-${String(minDate.getDate()).padStart(2, "0")}`
+    : undefined;
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const value = e.target.value;
     if (value) {
-      // Convert YYYY-MM-DD string to Date object
-      onDateChange(new Date(value + 'T00:00:00'));
+      // Parse YYYY-MM-DD and create date at local midnight
+      const [year, month, day] = value.split("-").map(Number);
+      onDateChange(new Date(year, month - 1, day));
     } else {
       onDateChange(undefined);
     }
@@ -31,6 +45,7 @@ export function DatePicker({ date, onDateChange, placeholder = "Pick a date" }: 
         <input
           type="date"
           value={dateValue}
+          min={minDateValue}
           onChange={handleChange}
           placeholder={placeholder}
           className={cn(
@@ -42,7 +57,7 @@ export function DatePicker({ date, onDateChange, placeholder = "Pick a date" }: 
             "[&::-webkit-calendar-picker-indicator]:cursor-pointer",
             "[&::-webkit-calendar-picker-indicator]:opacity-50",
             "[&::-webkit-calendar-picker-indicator]:hover:opacity-100",
-            !date && "text-muted-foreground"
+            !date && "text-muted-foreground",
           )}
         />
       </div>

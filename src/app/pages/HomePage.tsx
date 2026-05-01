@@ -25,9 +25,10 @@ export function HomePage() {
 
   const officePosts = useMemo(() => {
     if (!currentOffice) return [];
-    return posts.filter(
-      (post) => post.office === currentOffice,
-    );
+
+    return currentOffice === "Central NYC"
+      ? posts
+      : posts.filter((post) => post.office === currentOffice);
   }, [posts, currentOffice]);
 
   const matchesDateFilter = (
@@ -107,7 +108,12 @@ export function HomePage() {
         pubmatDateRangeFilter,
       );
 
-      return matchesAuditFocus && matchesStatus && matchesPlatform && matchesDate;
+      return (
+        matchesAuditFocus &&
+        matchesStatus &&
+        matchesPlatform &&
+        matchesDate
+      );
     });
   }, [
     officePosts,
@@ -135,7 +141,12 @@ export function HomePage() {
         captionDateRangeFilter,
       );
 
-      return matchesAuditFocus && matchesStatus && matchesPlatform && matchesDate;
+      return (
+        matchesAuditFocus &&
+        matchesStatus &&
+        matchesPlatform &&
+        matchesDate
+      );
     });
   }, [
     officePosts,

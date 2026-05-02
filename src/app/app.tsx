@@ -14,11 +14,12 @@ import { AccessRequestsProvider } from "@/contexts/AccessRequestsContext";
 import { HelpButton } from "@/app/components/HelpButton";
 import { SmarTechLogo } from "@/app/components/SmarTechLogo";
 
-// UNIVERSAL FIX: Removed curly braces from ALL page imports 
-// to match 'export default' files.
-import PubMatsPage from "@/app/pages/PubMatsPage";
-import CaptionsPage from "@/app/pages/CaptionsPage";
-import AccountAccessPage from "@/app/pages/AccountAccessPage";
+// 1. These pages seem to be using Named Exports (export function Name)
+import { PubMatsPage } from "@/app/pages/PubMatsPage";
+import { CaptionsPage } from "@/app/pages/CaptionsPage";
+import { AccountAccessPage } from "@/app/pages/AccountAccessPage"; 
+
+// 2. These pages seem to be using Default Exports (export default function Name)
 import ForgotPasswordPage from "@/app/pages/ForgotPasswordPage";
 import HandoffRequestPage from "@/app/pages/HandoffRequestPage";
 import RequestApprovalPage from "@/app/pages/RequestApprovalPage";
@@ -50,7 +51,6 @@ function DashboardLayout({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   return (
     <Routes>
-      {/* Public Routes */}
       <Route path="/login" element={<LoginPage />} />
       <Route path="/account-access" element={<AccountAccessPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
@@ -58,7 +58,6 @@ function AppRoutes() {
       <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/create-account-request" element={<CreateAccountRequestPage />} />
 
-      {/* Protected Dashboard Routes */}
       <Route
         path="/"
         element={
@@ -136,7 +135,6 @@ function AppRoutes() {
         }
       />
 
-      {/* Fallback */}
       <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );

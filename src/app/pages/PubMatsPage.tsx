@@ -9,7 +9,7 @@ import {
   ChevronDown,
   Info,
 } from "lucide-react";
-import { Client } from "@gradio/client"; // Official Gradio Client
+import { Client } from "@gradio/client";
 import { usePosts } from "@/contexts/PostsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { DatePicker } from "@/app/components/ui/date-picker";
@@ -143,33 +143,25 @@ export default function PubMatsPage() {
     setAnalysisResult(null);
 
     try {
-      // 1. Connect to the Space
       const client = await Client.connect("LFaithB/smartech-pubmat-checker");
-
-      // 2. Convert Base64 string to Blob for the Gradio Client
       const imageBlob = await fetch(uploadedImage).then((r) => r.blob());
 
-      // 3. Send prediction request
       const result = await client.predict("/predict", {
         image: imageBlob,
         post_type: postType,
         collaborators_text: JSON.stringify(selectedCollaborators),
       });
 
-      // 4. Extract data from Gradio response
+      // Flexible extraction to prevent "0" scores and false rejections
       const apiData = (result.data as any)[0];
-
-      if (!apiData || apiData.error) {
-        throw new Error(apiData?.error || "Invalid response from analysis server.");
-      }
-
-      const pubmatScore = apiData.score || apiData.pubmatScore || 0;
+      const rawScore = apiData.score ?? apiData.pubmatScore ?? 0;
+      const pubmatScore = typeof rawScore === "string" ? parseFloat(rawScore) : rawScore;
+      
       const status = apiData.status || (pubmatScore >= 75 ? "Accepted" : "Rejected");
       const remarks = apiData.remarks || apiData.recommendation || "Analysis complete.";
 
       setAnalysisResult({ pubmatScore, remarks, status });
 
-      // 5. Integrate with internal PostsContext
       if (!isLoading && currentOffice) {
         const today = new Date().toISOString().split("T")[0];
         const auditDateStr = postDate ? formatDateSafe(postDate) : today;
@@ -404,7 +396,7 @@ export default function PubMatsPage() {
               )}
               <h3 className="text-lg font-bold">{analysisResult.status} (Score: {analysisResult.pubmatScore}%)</h3>
             </div>
-            <p className="text-sm text-foreground mb-4">{analysisResult.remarks}</p>
+            <p className="text-sm text-foreground mb-4 whitespace-pre-wrap">{analysisResult.remarks}</p>
             <button onClick={handleStartNewAudit} className="bg-accent px-4 py-2 rounded-lg text-sm font-medium">
               Start New Audit
             </button>

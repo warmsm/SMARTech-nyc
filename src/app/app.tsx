@@ -14,12 +14,12 @@ import { AccessRequestsProvider } from "@/contexts/AccessRequestsContext";
 import { HelpButton } from "@/app/components/HelpButton";
 import { SmarTechLogo } from "@/app/components/SmarTechLogo";
 
-// 1. These pages seem to be using Named Exports (export function Name)
-import { PubMatsPage } from "@/app/pages/PubMatsPage";
-import { CaptionsPage } from "@/app/pages/CaptionsPage";
-import { AccountAccessPage } from "@/app/pages/AccountAccessPage"; 
-
-// 2. These pages seem to be using Default Exports (export default function Name)
+/** 
+ * UNIFORM IMPORTS: All pages imported as Default (No curly braces)
+ */
+import PubMatsPage from "@/app/pages/PubMatsPage";
+import CaptionsPage from "@/app/pages/CaptionsPage";
+import AccountAccessPage from "@/app/pages/AccountAccessPage";
 import ForgotPasswordPage from "@/app/pages/ForgotPasswordPage";
 import HandoffRequestPage from "@/app/pages/HandoffRequestPage";
 import RequestApprovalPage from "@/app/pages/RequestApprovalPage";
@@ -29,9 +29,6 @@ import ReviewApprovedPostsPage from "@/app/pages/ReviewApprovedPostsPage";
 import ReviewAppealsPage from "@/app/pages/ReviewAppealsPage";
 import CreateAccountRequestPage from "@/app/pages/CreateAccountRequestPage";
 
-/**
- * Shared layout for authenticated pages
- */
 function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { currentOffice } = useAuth();
   const isCentral = currentOffice === "Central NYC";

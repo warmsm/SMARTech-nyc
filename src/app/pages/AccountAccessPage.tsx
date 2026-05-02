@@ -3,7 +3,8 @@ import { Card, CardContent } from "@/app/components/ui/card";
 import { Button } from "@/app/components/ui/button";
 import { ROUTES } from "@/constants/routes";
 
-export function AccountAccessPage() {
+// ADD 'default' HERE
+export default function AccountAccessPage() {
   const navigate = useNavigate();
 
   return (

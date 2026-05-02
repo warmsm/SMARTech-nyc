@@ -152,24 +152,19 @@ export default function PubMatsPage() {
         collaborators_text: JSON.stringify(selectedCollaborators),
       });
 
-      // Flexible extraction to handle various possible API response structures
-      const apiData = Array.isArray(result.data) ? result.data[0] : result.data;
+      // INTEGRATION: result.data[0] is annotated image, result.data[1] is JSON report
+      const annotatedImage = result.data[0] as string;
+      const apiData = result.data[1] as any;
       
-      // Look for any variation of 'score' returned by checker.py
-      const rawScore = apiData?.score ?? 
-                       apiData?.pubmatScore ?? 
-                       apiData?.final_score ?? 0;
-                       
-      const pubmatScore = typeof rawScore === "string" ? parseFloat(rawScore) : Number(rawScore);
+      // Update preview to show the version with detection boxes/highlights
+      setUploadedImage(annotatedImage);
       
-      // Look for any variation of remarks or recommendations
-      const remarks = apiData?.remarks || 
-                      apiData?.recommendation || 
-                      apiData?.feedback || 
-                      apiData?.details || 
-                      "Analysis complete.";
-
-      const status = apiData?.status || (pubmatScore >= 75 ? "Accepted" : "Rejected");
+      // Extract scoring and feedback from the new report structure
+      const pubmatScore = apiData?.overall === "PASS" ? 100 : 70;
+      const remarks = apiData?.logos?.remark || 
+                      apiData?.watermark?.remark || 
+                      "Audit complete. Please check annotations.";
+      const status = apiData?.overall === "PASS" ? "Accepted" : "Rejected";
 
       setAnalysisResult({ pubmatScore, remarks, status });
 
@@ -181,7 +176,7 @@ export default function PubMatsPage() {
           id: `POST-${Date.now().toString().slice(-6)}`,
           platform: selectedPlatforms.length === 1 ? selectedPlatforms[0] : selectedPlatforms,
           caption: "",
-          thumbnail: uploadedImage || undefined,
+          thumbnail: annotatedImage, // Save the annotated version for history
           score: pubmatScore,
           pubmatScore,
           status,

@@ -9,6 +9,7 @@ import {
   ChevronDown,
   Info,
 } from "lucide-react";
+import { Client } from "@gradio/client"; // Official Gradio Client
 import { usePosts } from "@/contexts/PostsContext";
 import { useAuth } from "@/contexts/AuthContext";
 import { DatePicker } from "@/app/components/ui/date-picker";
@@ -133,36 +134,34 @@ export default function PubMatsPage() {
   };
 
   /**
-   * Primary Analysis logic connecting to Hugging Face
-   * Updated to use /gradio_api/predict to resolve 404 errors
+   * Primary Analysis logic using @gradio/client
    */
   const analyzeContent = async () => {
+    if (!uploadedImage) return;
+    
     setIsAnalyzing(true);
     setAnalysisResult(null);
 
     try {
-      const collabsJson = JSON.stringify(selectedCollaborators);
+      // 1. Connect to the Space
+      const client = await Client.connect("LFaithB/smartech-pubmat-checker");
 
-      const response = await fetch(
-        "https://lfaithb-smartech-pubmat-checker.hf.space/gradio_api/predict",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            data: [uploadedImage, postType, collabsJson],
-            event_data: null,
-            fn_index: 0,
-            trigger_id: 0
-          }),
-        }
-      );
+      // 2. Convert Base64 string to Blob for the Gradio Client
+      const imageBlob = await fetch(uploadedImage).then((r) => r.blob());
 
-      if (!response.ok) throw new Error(`Server responded with ${response.status}`);
+      // 3. Send prediction request
+      const result = await client.predict("/predict", {
+        image: imageBlob,
+        post_type: postType,
+        collaborators_text: JSON.stringify(selectedCollaborators),
+      });
 
-      const result = await response.json();
-      const apiData = result.data ? result.data[0] : null;
+      // 4. Extract data from Gradio response
+      const apiData = (result.data as any)[0];
 
-      if (!apiData || apiData.error) throw new Error(apiData?.error || "Invalid response");
+      if (!apiData || apiData.error) {
+        throw new Error(apiData?.error || "Invalid response from analysis server.");
+      }
 
       const pubmatScore = apiData.score || apiData.pubmatScore || 0;
       const status = apiData.status || (pubmatScore >= 75 ? "Accepted" : "Rejected");
@@ -170,6 +169,7 @@ export default function PubMatsPage() {
 
       setAnalysisResult({ pubmatScore, remarks, status });
 
+      // 5. Integrate with internal PostsContext
       if (!isLoading && currentOffice) {
         const today = new Date().toISOString().split("T")[0];
         const auditDateStr = postDate ? formatDateSafe(postDate) : today;
@@ -198,7 +198,7 @@ export default function PubMatsPage() {
       }
     } catch (error) {
       console.error("Audit Error:", error);
-      alert(`Analysis failed: ${error instanceof Error ? error.message : "Backend connection error"}`);
+      alert(`Analysis failed: ${error instanceof Error ? error.message : "Connection error"}`);
     } finally {
       setIsAnalyzing(false);
     }

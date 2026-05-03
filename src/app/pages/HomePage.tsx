@@ -4,6 +4,7 @@ import { CaptionTable } from "@/app/components/CaptionTable";
 import { Filters } from "@/app/components/Filters";
 import { usePosts } from "@/contexts/PostsContext";
 import { useAuth } from "@/contexts/AuthContext";
+import { getPostingDate } from "@/utils/postDates";
 
 export function HomePage() {
   const { posts, isLoading } = usePosts();
@@ -37,24 +38,35 @@ export function HomePage() {
   ) => {
     if (dateRangeFilter === "all") return true;
 
-    const postDate = new Date(postDateValue);
+    const [year, month, day] = postDateValue
+      .split("-")
+      .map(Number);
+    const postDate =
+      year && month && day
+        ? new Date(year, month - 1, day)
+        : new Date(postDateValue);
+
+    if (Number.isNaN(postDate.getTime())) return false;
+
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
 
     switch (dateRangeFilter) {
       case "today":
-        return postDate >= today;
+        return postDate >= today && postDate < tomorrow;
 
       case "last7days": {
         const last7Days = new Date(today);
         last7Days.setDate(today.getDate() - 7);
-        return postDate >= last7Days;
+        return postDate >= last7Days && postDate < tomorrow;
       }
 
       case "last30days": {
         const last30Days = new Date(today);
         last30Days.setDate(today.getDate() - 30);
-        return postDate >= last30Days;
+        return postDate >= last30Days && postDate < tomorrow;
       }
 
       case "thisMonth":
@@ -75,13 +87,13 @@ export function HomePage() {
       case "last3months": {
         const last3Months = new Date(today);
         last3Months.setMonth(today.getMonth() - 3);
-        return postDate >= last3Months;
+        return postDate >= last3Months && postDate < tomorrow;
       }
 
       case "last6months": {
         const last6Months = new Date(today);
         last6Months.setMonth(today.getMonth() - 6);
-        return postDate >= last6Months;
+        return postDate >= last6Months && postDate < tomorrow;
       }
 
       default:
@@ -104,7 +116,7 @@ export function HomePage() {
           : post.platform === pubmatPlatformFilter);
 
       const matchesDate = matchesDateFilter(
-        post.submissionDate || post.date,
+        getPostingDate(post),
         pubmatDateRangeFilter,
       );
 
@@ -137,7 +149,7 @@ export function HomePage() {
           : post.platform === captionPlatformFilter);
 
       const matchesDate = matchesDateFilter(
-        post.submissionDate || post.date,
+        getPostingDate(post),
         captionDateRangeFilter,
       );
 

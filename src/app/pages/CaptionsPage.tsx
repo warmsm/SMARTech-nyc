@@ -53,9 +53,7 @@ export function CaptionsPage() {
 
   const submitPost = async (result: AnalysisResult) => {
     const today = new Date().toISOString().split("T")[0];
-    const auditDateStr = postDate
-      ? formatDateSafe(postDate)
-      : today;
+    const postingDateStr = postDate ? formatDateSafe(postDate) : today;
 
     await addPost({
       id: `POST-${Date.now().toString().slice(-6)}`,
@@ -71,10 +69,10 @@ export function CaptionsPage() {
       tone: result.tone,
       status: result.status,
       recommendation: result.remarks,
-      date: today,
+      date: postingDateStr,
       office: currentOffice,
-      submissionDate: auditDateStr,
-      lastUpdated: auditDateStr,
+      submissionDate: today,
+      lastUpdated: today,
       auditFocus: "caption",
       centralReviewStatus: "Pending Review",
       appealStatus: "Not Appealed",

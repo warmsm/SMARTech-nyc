@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/app/components/ui/table";
 import { AuditPost } from "@/data/mockData";
+import { getPostingDate } from "@/utils/postDates";
 
 export default function ReviewApprovedPostsPage() {
   const { posts, centralReviewPost } = usePosts();
@@ -29,8 +30,8 @@ export default function ReviewApprovedPostsPage() {
 
   const isCentral = currentOffice === "Central NYC";
 
-  const getPostDate = (post: AuditPost) =>
-    new Date(post.submissionDate || post.date || 0);
+  const getPostTime = (post: AuditPost) =>
+    new Date(getPostingDate(post)).getTime();
 
   const startOfToday = () => {
     const today = new Date();
@@ -44,8 +45,8 @@ export default function ReviewApprovedPostsPage() {
     return posts
       .filter((post) => post.status === "Accepted")
       .sort((a, b) => {
-        const aTime = getPostDate(a).getTime();
-        const bTime = getPostDate(b).getTime();
+        const aTime = getPostTime(a);
+        const bTime = getPostTime(b);
 
         const aIsPast = aTime < today;
         const bIsPast = bTime < today;
@@ -228,7 +229,7 @@ export default function ReviewApprovedPostsPage() {
                       {post.auditFocus}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {post.submissionDate || post.date}
+                      {getPostingDate(post)}
                     </TableCell>
 
                     <TableCell>

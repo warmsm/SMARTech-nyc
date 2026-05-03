@@ -17,6 +17,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { usePosts } from "@/contexts/PostsContext";
 import { useState, useMemo } from "react";
+import { getPostingDate } from "@/utils/postDates";
 
 interface PubMatTableProps {
   posts: AuditPost[];
@@ -101,8 +102,8 @@ export function PubMatTable({ posts }: PubMatTableProps) {
           bValue = b.appealStatus || "Not Appealed";
           break;
         case "date":
-          aValue = new Date(a.submissionDate || a.date);
-          bValue = new Date(b.submissionDate || b.date);
+          aValue = new Date(getPostingDate(a));
+          bValue = new Date(getPostingDate(b));
           break;
         case "actions":
           aValue =
@@ -499,7 +500,7 @@ export function PubMatTable({ posts }: PubMatTableProps) {
 
                 {/* 7. Posting Date */}
                 <TableCell className="text-sm">
-                  {post.submissionDate || post.date}
+                  {getPostingDate(post)}
                 </TableCell>
 
                 {/* 8. Platforms */}

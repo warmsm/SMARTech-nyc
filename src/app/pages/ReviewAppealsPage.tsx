@@ -12,6 +12,7 @@ import {
   TableRow,
 } from "@/app/components/ui/table";
 import { AuditPost } from "@/data/mockData";
+import { getPostingDate } from "@/utils/postDates";
 
 export default function ReviewAppealsPage() {
   const { posts, reviewAppeal } = usePosts();
@@ -25,8 +26,8 @@ export default function ReviewAppealsPage() {
 
   const isCentral = currentOffice === "Central NYC";
 
-  const getPostingDate = (post: AuditPost) =>
-    new Date(post.submissionDate || post.date || 0);
+  const getPostingTime = (post: AuditPost) =>
+    new Date(getPostingDate(post)).getTime();
 
   const startOfToday = () => {
     const today = new Date();
@@ -40,8 +41,8 @@ export default function ReviewAppealsPage() {
     return posts
       .filter((post) => post.appealStatus === "Appealed")
       .sort((a, b) => {
-        const aTime = getPostingDate(a).getTime();
-        const bTime = getPostingDate(b).getTime();
+        const aTime = getPostingTime(a);
+        const bTime = getPostingTime(b);
 
         const aIsPast = aTime < today;
         const bIsPast = bTime < today;
@@ -269,7 +270,7 @@ export default function ReviewAppealsPage() {
                     </TableCell>
 
                     <TableCell className="text-sm">
-                      {post.submissionDate || post.date}
+                      {getPostingDate(post)}
                     </TableCell>
 
                     <TableCell>

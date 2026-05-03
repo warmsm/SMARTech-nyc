@@ -200,7 +200,7 @@ export function PubMatsPage() {
       setAnalysisResult(result);
 
       const today = new Date().toISOString().split("T")[0];
-      const auditDateStr = postDate
+      const postingDateStr = postDate
         ? formatDateSafe(postDate)
         : today;
 
@@ -216,10 +216,10 @@ export function PubMatsPage() {
         pubmatScore,
         status,
         recommendation: remarks,
-        date: today,
+        date: postingDateStr,
         office: currentOffice,
-        submissionDate: auditDateStr,
-        lastUpdated: auditDateStr,
+        submissionDate: today,
+        lastUpdated: today,
         auditFocus: "pubmat",
         centralReviewStatus: "Pending Review",
         appealStatus: "Not Appealed",
@@ -248,7 +248,7 @@ export function PubMatsPage() {
       });
 
       const today = new Date().toISOString().split("T")[0];
-      const auditDateStr = postDate
+      const postingDateStr = postDate
         ? formatDateSafe(postDate)
         : today;
 
@@ -264,10 +264,10 @@ export function PubMatsPage() {
         pubmatScore,
         status,
         recommendation: remarks,
-        date: today,
+        date: postingDateStr,
         office: currentOffice,
-        submissionDate: auditDateStr,
-        lastUpdated: auditDateStr,
+        submissionDate: today,
+        lastUpdated: today,
         auditFocus: "pubmat",
         centralReviewStatus: "Pending Review",
         appealStatus: "Not Appealed",

@@ -159,6 +159,7 @@ export function useAuth() {
       currentOffice: null,
       isAuthenticated: false,
       isAdmin: false,
+      isLoading: false,
       login: async () => false,
       logout: async () => {},
     };

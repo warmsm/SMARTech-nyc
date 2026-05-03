@@ -279,6 +279,7 @@ export function CaptionsPage() {
             !caption ||
             selectedPlatforms.length === 0 ||
             !postDate ||
+            Boolean(analysisResult) ||
             isAnalyzing
           }
           className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-lg disabled:opacity-50"

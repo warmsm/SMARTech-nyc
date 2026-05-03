@@ -28,6 +28,11 @@ interface AnalysisResult {
   pubmatScore: number;
   remarks: string;
   status: "Accepted" | "Rejected";
+  criteria?: Array<{
+    label: string;
+    status: "Present" | "Not Present";
+    detail?: string;
+  }>;
   annotatedImage?: string;
 }
 
@@ -298,6 +303,13 @@ export function PubMatsPage() {
         pubmatScore,
         remarks,
         status,
+        criteria: [
+          {
+            label: "Checker Response",
+            status: "Not Present",
+            detail: remarks,
+          },
+        ],
       });
 
       const today = new Date().toISOString().split("T")[0];
@@ -630,6 +642,7 @@ export function PubMatsPage() {
               !postType ||
               selectedPlatforms.length === 0 ||
               !postDate ||
+              Boolean(analysisResult) ||
               isAnalyzing
             }
             className="flex items-center space-x-2 rounded-lg bg-primary px-6 py-3 font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
@@ -695,6 +708,43 @@ export function PubMatsPage() {
                   {analysisResult.remarks}
                 </p>
               </div>
+
+              {analysisResult.criteria &&
+                analysisResult.criteria.length > 0 && (
+                  <div>
+                    <h4 className="mb-3 text-sm font-semibold text-primary">
+                      Criteria:
+                    </h4>
+                    <div className="grid gap-3 md:grid-cols-2">
+                      {analysisResult.criteria.map((criterion) => (
+                        <div
+                          key={criterion.label}
+                          className="rounded-lg bg-muted/30 p-4"
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <p className="text-sm font-medium text-foreground">
+                              {criterion.label}
+                            </p>
+                            <span
+                              className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                                criterion.status === "Present"
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-red-100 text-red-700"
+                              }`}
+                            >
+                              {criterion.status}
+                            </span>
+                          </div>
+                          {criterion.detail && (
+                            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+                              {criterion.detail}
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
               {analysisResult.annotatedImage && (
                 <div>

@@ -102,6 +102,53 @@ const calculatePubmatScore = (report: Record<string, any>) => {
   return Math.round((passedChecks / checks.length) * 100);
 };
 
+const toTitle = (value: string) => {
+  return value
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+};
+
+const pubmatCriterionLabels: Record<string, string> = {
+  logos: "Correct Logos Present",
+  logo_order: "Correct Logo Order",
+  pubmat_quality: "PubMat Image Quality",
+  watermark: "Watermark Present",
+  readability: "Readable Text",
+  spelling: "Spelling Review",
+  sgd: "SGD Signature",
+  photo_quality: "Photo Quality",
+};
+
+const getPubmatCriteria = (report: Record<string, any>) => {
+  return Object.entries(report)
+    .filter(([key, value]) => {
+      return (
+        key !== "post_type" &&
+        key !== "overall" &&
+        value &&
+        typeof value === "object" &&
+        "pass" in value
+      );
+    })
+    .map(([key, value]) => {
+      const label =
+        pubmatCriterionLabels[key] || value.label || toTitle(key);
+      const passed = Boolean(value.pass);
+      const detail =
+        value.remark ||
+        value.remarks ||
+        value.message ||
+        value.status ||
+        "";
+
+      return {
+        label,
+        status: passed ? ("Present" as const) : ("Not Present" as const),
+        detail: typeof detail === "string" ? detail : "",
+      };
+    });
+};
+
 export const auditPubmat = async ({
   file,
   postType,
@@ -142,6 +189,7 @@ export const auditPubmat = async ({
     pubmatScore,
     status: normalizeStatus(report.overall, pubmatScore),
     remarks: flattenPubmatRemarks(report),
+    criteria: getPubmatCriteria(report),
     annotatedImage:
       typeof annotatedImage === "string" ? annotatedImage : undefined,
   };

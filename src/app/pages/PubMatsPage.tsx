@@ -84,40 +84,33 @@ const renderRemarks = (remarks?: string) => {
 
 const renderCriteriaTable = (criteria: NonNullable<AnalysisResult["criteria"]>) => {
   return (
-    <div className="overflow-hidden rounded-lg border border-border">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/40">
-          <tr>
-            <th className="w-1/3 px-3 py-2 text-left font-semibold text-foreground">
-              Criteria
-            </th>
-            <th className="px-3 py-2 text-left font-semibold text-foreground">
-              Remark
-            </th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {criteria.map((criterion) => (
-            <tr key={criterion.label}>
-              <td className="px-3 py-2 align-top font-semibold text-foreground">
-                {criterion.label}
-              </td>
-              <td className="px-3 py-2 align-top text-muted-foreground">
-                <span
-                  className={
-                    criterion.status === "Present"
-                      ? "font-semibold text-green-700"
-                      : "font-semibold text-red-700"
-                  }
-                >
-                  {criterion.status}
-                </span>
-                {criterion.detail ? ` - ${criterion.detail}` : ""}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div className="grid gap-3 md:grid-cols-2">
+      {criteria.map((criterion) => (
+        <div
+          key={criterion.label}
+          className="rounded-lg bg-muted/30 p-4"
+        >
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-semibold text-foreground">
+              {criterion.label}
+            </p>
+            <span
+              className={`shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ${
+                criterion.status === "Present"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-700"
+              }`}
+            >
+              {criterion.status}
+            </span>
+          </div>
+          {criterion.detail && (
+            <p className="mt-2 text-xs leading-relaxed text-muted-foreground">
+              {criterion.detail}
+            </p>
+          )}
+        </div>
+      ))}
     </div>
   );
 };

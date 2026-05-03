@@ -41,7 +41,7 @@ export const verifyCaption = async (caption: string) => {
   const inclusivity = toNumber(inclusivityValue, 0);
   const tone = toNumber(toneValue, 0);
   const captionScore = Math.round(
-    grammar * 0.4 + inclusivity * 0.4 + tone * 0.2,
+    (grammar + inclusivity + tone) / 3,
   );
 
   return {

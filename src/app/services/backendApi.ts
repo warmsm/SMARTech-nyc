@@ -112,7 +112,9 @@ export const auditPubmat = async ({
   collaborators: string[];
 }) => {
   const backendPostType =
-    postType.toLowerCase() === "hiring" ? "Opportunity" : postType;
+    postType.toLowerCase() === "opportunities"
+      ? "Opportunity"
+      : postType;
   const formData = new FormData();
   formData.append("file", file);
   formData.append("post_type", backendPostType);
@@ -131,12 +133,16 @@ export const auditPubmat = async ({
     throw new Error(data?.error || "Pubmat checker request failed");
   }
 
-  const report = Array.isArray(data) ? data[0] : data;
+  const report = data.report || (Array.isArray(data) ? data[0] : data);
   const pubmatScore = calculatePubmatScore(report);
+  const annotatedImage =
+    data.annotated_image || data.annotatedImage || report.annotated_image;
 
   return {
     pubmatScore,
     status: normalizeStatus(report.overall, pubmatScore),
     remarks: flattenPubmatRemarks(report),
+    annotatedImage:
+      typeof annotatedImage === "string" ? annotatedImage : undefined,
   };
 };

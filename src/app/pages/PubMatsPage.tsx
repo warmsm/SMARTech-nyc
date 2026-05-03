@@ -28,6 +28,7 @@ interface AnalysisResult {
   pubmatScore: number;
   remarks: string;
   status: "Accepted" | "Rejected";
+  annotatedImage?: string;
 }
 
 export function PubMatsPage() {
@@ -67,7 +68,7 @@ export function PubMatsPage() {
     "Quotes",
     "Advisory",
     "Resolution",
-    "Hiring",
+    "Opportunities",
     "Photo",
     "Holiday",
     "Other",
@@ -195,7 +196,7 @@ export function PubMatsPage() {
         postType,
         collaborators: selectedCollaborators,
       });
-      const { pubmatScore, remarks, status } = result;
+      const { pubmatScore, remarks, status, annotatedImage } = result;
 
       setAnalysisResult(result);
 
@@ -211,7 +212,7 @@ export function PubMatsPage() {
             ? selectedPlatforms[0]
             : selectedPlatforms,
         caption: "",
-        thumbnail: uploadedImage || undefined,
+        thumbnail: annotatedImage || uploadedImage || undefined,
         score: pubmatScore,
         pubmatScore,
         status,
@@ -625,6 +626,21 @@ export function PubMatsPage() {
                   {analysisResult.remarks}
                 </p>
               </div>
+
+              {analysisResult.annotatedImage && (
+                <div>
+                  <h4 className="mb-2 text-sm font-semibold text-primary">
+                    Annotated Detection:
+                  </h4>
+                  <div className="overflow-hidden rounded-lg border border-border bg-background">
+                    <img
+                      src={analysisResult.annotatedImage}
+                      alt="Annotated pubmat detection result"
+                      className="mx-auto max-h-[520px] w-auto object-contain"
+                    />
+                  </div>
+                </div>
+              )}
 
               <div className="grid grid-cols-2 gap-4 rounded-lg bg-muted/30 p-4 text-sm">
                 <div>

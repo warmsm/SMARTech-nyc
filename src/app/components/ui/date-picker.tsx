@@ -9,6 +9,7 @@ interface DatePickerProps {
   onDateChange: (date: Date | undefined) => void;
   placeholder?: string;
   minDate?: Date;
+  disabled?: boolean;
 }
 
 export function DatePicker({
@@ -16,6 +17,7 @@ export function DatePicker({
   onDateChange,
   placeholder = "Pick a date",
   minDate,
+  disabled = false,
 }: DatePickerProps) {
   // Convert Date to YYYY-MM-DD format for input value (using local date components)
   const dateValue = date
@@ -47,6 +49,7 @@ export function DatePicker({
           value={dateValue}
           min={minDateValue}
           onChange={handleChange}
+          disabled={disabled}
           placeholder={placeholder}
           className={cn(
             "w-full h-auto py-3 pl-10 pr-3 rounded-md border border-input bg-background text-sm",

@@ -43,6 +43,7 @@ export function CaptionsPage() {
     useState<AnalysisResult | null>(null);
   const [showSuccessMessage, setShowSuccessMessage] =
     useState(false);
+  const isAuditLocked = Boolean(analysisResult) || isAnalyzing;
 
   const platforms: Platform[] = [
     "Facebook",
@@ -209,9 +210,10 @@ export function CaptionsPage() {
         <textarea
           value={caption}
           onChange={(e) => setCaption(e.target.value)}
+          disabled={isAuditLocked}
           placeholder="Enter your caption here..."
           rows={6}
-          className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary resize-none"
+          className="w-full px-4 py-3 border border-border rounded-lg bg-background focus:ring-2 focus:ring-primary resize-none disabled:cursor-not-allowed disabled:opacity-60"
         />
 
         <div className="text-xs text-right text-muted-foreground mt-2">
@@ -235,6 +237,7 @@ export function CaptionsPage() {
               <input
                 type="checkbox"
                 checked={selectedPlatforms.includes(p)}
+                disabled={isAuditLocked}
                 onChange={(e) => {
                   if (e.target.checked) {
                     setSelectedPlatforms([
@@ -269,6 +272,7 @@ export function CaptionsPage() {
           onDateChange={setPostDate}
           placeholder="Pick a date"
           minDate={new Date()}
+          disabled={isAuditLocked}
         />
       </div>
 
@@ -279,8 +283,7 @@ export function CaptionsPage() {
             !caption ||
             selectedPlatforms.length === 0 ||
             !postDate ||
-            Boolean(analysisResult) ||
-            isAnalyzing
+            isAuditLocked
           }
           className="flex items-center gap-2 bg-primary text-white px-6 py-3 rounded-lg disabled:opacity-50"
         >

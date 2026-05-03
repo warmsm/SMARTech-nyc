@@ -63,6 +63,14 @@ export function PubMatTable({ posts }: PubMatTableProps) {
     return platform;
   };
 
+  const formatRemarks = (remarks?: string) => {
+    return (remarks || "")
+      .split(";")
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .join("\n");
+  };
+
   const handleSort = (column: SortColumn) => {
     if (sortColumn === column) {
       setSortDirection(
@@ -450,8 +458,10 @@ export function PubMatTable({ posts }: PubMatTableProps) {
                 {/* 3. Remarks */}
                 <TableCell>
                   <div className="max-w-md text-sm text-muted-foreground">
-                    <div className="line-clamp-2">
-                      {post.remarks || post.recommendation}
+                    <div className="line-clamp-3 whitespace-pre-line">
+                      {formatRemarks(
+                        post.remarks || post.recommendation,
+                      )}
                     </div>
                     {(post.remarks || post.recommendation) &&
                       (post.remarks || post.recommendation)!
@@ -459,9 +469,11 @@ export function PubMatTable({ posts }: PubMatTableProps) {
                         <button
                           onClick={() =>
                             setExpandedRemarks(
-                              post.remarks ||
-                                post.recommendation ||
-                                "",
+                              formatRemarks(
+                                post.remarks ||
+                                  post.recommendation ||
+                                  "",
+                              ),
                             )
                           }
                           className="text-primary hover:underline text-xs mt-1"

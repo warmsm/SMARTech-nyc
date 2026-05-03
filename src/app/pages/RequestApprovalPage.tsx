@@ -49,6 +49,7 @@ export default function RequestApprovalPage() {
     try {
       if (navigator.clipboard && window.isSecureContext) {
         await navigator.clipboard.writeText(code);
+        copied = true;
       } else {
         const textArea = document.createElement("textarea");
         textArea.value = code;
@@ -57,7 +58,7 @@ export default function RequestApprovalPage() {
         document.body.appendChild(textArea);
         textArea.focus();
         textArea.select();
-        document.execCommand("copy");
+        copied = document.execCommand("copy");
         document.body.removeChild(textArea);
       }
 

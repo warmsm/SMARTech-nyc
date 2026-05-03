@@ -67,6 +67,7 @@ export function PubMatsPage() {
   const [isDragging, setIsDragging] = useState(false);
 
   const collaboratorRef = useRef<HTMLDivElement | null>(null);
+  const isAuditLocked = Boolean(analysisResult) || isAnalyzing;
 
   const postTypes = [
     "News",
@@ -161,6 +162,8 @@ export function PubMatsPage() {
   const handleImageUpload = (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
+    if (isAuditLocked) return;
+
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -175,6 +178,8 @@ export function PubMatsPage() {
   };
 
   const handleRemoveImage = () => {
+    if (isAuditLocked) return;
+
     setUploadedImage(null);
     setUploadedFile(null);
     setFileName("");
@@ -184,18 +189,21 @@ export function PubMatsPage() {
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isAuditLocked) return;
     setIsDragging(true);
   };
 
   const handleDragLeave = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isAuditLocked) return;
     setIsDragging(false);
   };
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    if (isAuditLocked) return;
     setIsDragging(false);
 
     const files = e.dataTransfer.files;
@@ -217,6 +225,8 @@ export function PubMatsPage() {
   };
 
   const toggleCollaborator = (value: Collaborator) => {
+    if (isAuditLocked) return;
+
     setSelectedCollaborators((prev) =>
       prev.includes(value)
         ? prev.filter((item) => item !== value)
@@ -225,6 +235,8 @@ export function PubMatsPage() {
   };
 
   const handleSelectAllCollaborators = () => {
+    if (isAuditLocked) return;
+
     if (selectedCollaborators.length === collaborators.length) {
       setSelectedCollaborators([]);
     } else {
@@ -369,7 +381,8 @@ export function PubMatsPage() {
             <select
               value={postType}
               onChange={(e) => setPostType(e.target.value)}
-              className="w-full rounded-lg border border-border bg-card px-4 py-3 text-foreground outline-none transition focus:ring-2 focus:ring-primary"
+              disabled={isAuditLocked}
+              className="w-full rounded-lg border border-border bg-card px-4 py-3 text-foreground outline-none transition focus:ring-2 focus:ring-primary disabled:cursor-not-allowed disabled:opacity-60"
             >
               <option value="">Choose post type</option>
               {postTypes.map((type) => (
@@ -425,8 +438,10 @@ export function PubMatsPage() {
             <button
               type="button"
               onClick={() =>
+                !isAuditLocked &&
                 setIsCollaboratorOpen((prev) => !prev)
               }
+              disabled={isAuditLocked}
               className={`flex w-full items-center justify-between rounded-lg border bg-card px-4 py-3 text-left transition ${
                 isCollaboratorOpen
                   ? "border-primary ring-2 ring-primary/20"
@@ -448,9 +463,10 @@ export function PubMatsPage() {
             {isCollaboratorOpen && (
               <div className="absolute z-20 mt-1 w-full rounded-lg border border-border bg-card shadow-lg">
                 <button
-                  type="button"
-                  onClick={handleSelectAllCollaborators}
-                  className="block w-full border-b border-border px-4 py-3 text-left text-sm hover:bg-muted/40"
+                type="button"
+                onClick={handleSelectAllCollaborators}
+                disabled={isAuditLocked}
+                className="block w-full border-b border-border px-4 py-3 text-left text-sm hover:bg-muted/40"
                 >
                   Select all
                 </button>
@@ -465,6 +481,7 @@ export function PubMatsPage() {
                       checked={selectedCollaborators.includes(
                         item,
                       )}
+                      disabled={isAuditLocked}
                       onChange={() => toggleCollaborator(item)}
                       className="h-4 w-4 appearance-none rounded border border-border bg-background
                                  checked:bg-primary checked:border-primary
@@ -505,16 +522,19 @@ export function PubMatsPage() {
                 type="file"
                 accept="image/*"
                 onChange={handleImageUpload}
+                disabled={isAuditLocked}
                 className="hidden"
                 id="pubmat-upload"
               />
               <label
-                htmlFor="pubmat-upload"
+                htmlFor={isAuditLocked ? undefined : "pubmat-upload"}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 className={`flex h-44 w-full cursor-pointer items-center justify-between rounded-lg border-2 border-dashed px-6 transition-colors ${
-                  isDragging
+                  isAuditLocked
+                    ? "cursor-not-allowed border-border bg-muted/30 opacity-60"
+                    : isDragging
                     ? "border-primary bg-primary/10"
                     : "border-border bg-background hover:bg-muted/40"
                 }`}
@@ -548,7 +568,8 @@ export function PubMatsPage() {
                   <button
                     type="button"
                     onClick={handleRemoveImage}
-                    className="text-sm font-medium text-red-600 hover:text-red-700"
+                    disabled={isAuditLocked}
+                    className="text-sm font-medium text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     Remove
                   </button>
@@ -585,6 +606,7 @@ export function PubMatsPage() {
                 <input
                   type="checkbox"
                   checked={selectedPlatforms.includes(p)}
+                  disabled={isAuditLocked}
                   onChange={(e) => {
                     if (e.target.checked) {
                       setSelectedPlatforms([
@@ -630,6 +652,7 @@ export function PubMatsPage() {
             onDateChange={setPostDate}
             placeholder="Pick a date"
             minDate={new Date()}
+            disabled={isAuditLocked}
           />
         </div>
 
@@ -642,8 +665,7 @@ export function PubMatsPage() {
               !postType ||
               selectedPlatforms.length === 0 ||
               !postDate ||
-              Boolean(analysisResult) ||
-              isAnalyzing
+              isAuditLocked
             }
             className="flex items-center space-x-2 rounded-lg bg-primary px-6 py-3 font-semibold text-primary-foreground transition-all hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >

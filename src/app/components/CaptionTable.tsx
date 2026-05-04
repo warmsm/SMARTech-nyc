@@ -56,7 +56,7 @@ const PLATFORM_SUGGESTION_PATTERNS = [
   /instagram caption should include/i,
   /call for applications post must include the hashtags/i,
   /^,?\s*(call for applications|latest|in photos|read|icymi|now|watch)\s*,?\.?$/i,
-  /^or\s+watch\s*\.?$/i,
+  /^,?\s*or\s+watch\s*\.?$/i,
   /^\.+$/,
 ];
 

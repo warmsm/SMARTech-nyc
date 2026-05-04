@@ -40,6 +40,9 @@ const VISUAL_ONLY_REMARK_LABELS = new Set([
   "Hashtags",
 ]);
 
+const FB_LEAD_TEXT_WARNING =
+  "missing recognized lead text when applicable. Accepted lead texts: CALL FOR APPLICATIONS |, LATEST |, IN PHOTOS |, READ |, ICYMI |, NOW |, WATCH |";
+
 const PLATFORM_SUGGESTION_PATTERNS = [
   /facebook caption should start with the correct lead text/i,
   /facebook post should use the correct lead text/i,
@@ -52,6 +55,9 @@ const PLATFORM_SUGGESTION_PATTERNS = [
   /instagram caption should not exceed/i,
   /instagram caption should include/i,
   /call for applications post must include the hashtags/i,
+  /^,?\s*(call for applications|latest|in photos|read|icymi|now|watch)\s*,?\.?$/i,
+  /^or\s+watch\s*\.?$/i,
+  /^\.+$/,
 ];
 
 const isPlatformSuggestion = (value: string) =>
@@ -113,6 +119,14 @@ export function CaptionTable({ posts }: CaptionTableProps) {
   };
 
   const getVisualDetailLines = (label: string, detail: string) => {
+    if (label === "Facebook Lead Text") {
+      return [
+        detail === "missing recognized lead text when applicable"
+          ? FB_LEAD_TEXT_WARNING
+          : detail,
+      ];
+    }
+
     if (label === "Text Limit") {
       return detail
         .split(/\s*\|\s*|\s*,\s*(?=(Instagram|X|TikTok)\s+exceeds\b)/)

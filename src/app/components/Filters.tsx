@@ -13,6 +13,7 @@ interface FiltersProps {
   status: string;
   platform: string;
   dateRange?: string;
+  type: "pubmat" | "caption"; // Added to identify the caller
   onStatusChange: (value: string) => void;
   onPlatformChange: (value: string) => void;
   onDateRangeChange?: (value: string) => void;
@@ -23,6 +24,7 @@ export function Filters({
   status,
   platform,
   dateRange,
+  type,
   onStatusChange,
   onPlatformChange,
   onDateRangeChange,
@@ -39,10 +41,7 @@ export function Filters({
         <div className="flex flex-col gap-2">
           <Label htmlFor="status-filter">Status</Label>
           <Select value={status} onValueChange={onStatusChange}>
-            <SelectTrigger
-              id="status-filter"
-              className="w-[180px]"
-            >
+            <SelectTrigger id="status-filter" className="w-[180px]">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
@@ -55,23 +54,19 @@ export function Filters({
 
         <div className="flex flex-col gap-2">
           <Label htmlFor="platform-filter">Platform</Label>
-          <Select
-            value={platform}
-            onValueChange={onPlatformChange}
-          >
-            <SelectTrigger
-              id="platform-filter"
-              className="w-[180px]"
-            >
+          <Select value={platform} onValueChange={onPlatformChange}>
+            <SelectTrigger id="platform-filter" className="w-[180px]">
               <SelectValue placeholder="All Platforms" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Platforms</SelectItem>
               <SelectItem value="Facebook">Facebook</SelectItem>
-              <SelectItem value="Instagram">
-                Instagram
-              </SelectItem>
+              <SelectItem value="Instagram">Instagram</SelectItem>
               <SelectItem value="X">X</SelectItem>
+              {/* Conditional Rendering for TikTok */}
+              {type === "caption" && (
+                <SelectItem value="TikTok">TikTok</SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>
@@ -79,46 +74,22 @@ export function Filters({
         {onDateRangeChange && (
           <div className="flex flex-col gap-2">
             <Label htmlFor="date-filter">Date</Label>
-            <Select
-              value={dateRange || "all"}
-              onValueChange={onDateRangeChange}
-            >
-              <SelectTrigger
-                id="date-filter"
-                className="w-[180px]"
-              >
+            <Select value={dateRange || "all"} onValueChange={onDateRangeChange}>
+              <SelectTrigger id="date-filter" className="w-[180px]">
                 <SelectValue placeholder="All Time" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Time</SelectItem>
                 <SelectItem value="today">Today</SelectItem>
-                <SelectItem value="last7days">
-                  Last 7 Days
-                </SelectItem>
-                <SelectItem value="last30days">
-                  Last 30 Days
-                </SelectItem>
-                <SelectItem value="thisMonth">
-                  This Month
-                </SelectItem>
-                <SelectItem value="lastMonth">
-                  Last Month
-                </SelectItem>
-                <SelectItem value="last3months">
-                  Last 3 Months
-                </SelectItem>
-                <SelectItem value="last6months">
-                  Last 6 Months
-                </SelectItem>
-                <SelectItem value="upcoming">
-                  Upcoming
-                </SelectItem>
-                <SelectItem value="next7days">
-                  Next 7 Days
-                </SelectItem>
-                <SelectItem value="next30days">
-                  Next 30 Days
-                </SelectItem>
+                <SelectItem value="last7days">Last 7 Days</SelectItem>
+                <SelectItem value="last30days">Last 30 Days</SelectItem>
+                <SelectItem value="thisMonth">This Month</SelectItem>
+                <SelectItem value="lastMonth">Last Month</SelectItem>
+                <SelectItem value="last3months">Last 3 Months</SelectItem>
+                <SelectItem value="last6months">Last 6 Months</SelectItem>
+                <SelectItem value="upcoming">Upcoming</SelectItem>
+                <SelectItem value="next7days">Next 7 Days</SelectItem>
+                <SelectItem value="next30days">Next 30 Days</SelectItem>
               </SelectContent>
             </Select>
           </div>

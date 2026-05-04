@@ -520,7 +520,20 @@ const normalizedPostsStore = {
 const postsStore = {
   async list(): Promise<any[]> {
     try {
-      return await normalizedPostsStore.list();
+      const normalizedPosts = await normalizedPostsStore.list();
+
+      if (normalizedPosts.length > 0) {
+        return normalizedPosts;
+      }
+
+      try {
+        return await legacyPostsStore.list();
+      } catch (legacyError) {
+        if (isMissingTableError(legacyError)) {
+          return normalizedPosts;
+        }
+        throw legacyError;
+      }
     } catch (error) {
       if (isMissingTableError(error)) {
         return legacyPostsStore.list();

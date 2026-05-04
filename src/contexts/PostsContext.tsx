@@ -37,13 +37,58 @@ const PostsContext = createContext<
   PostsContextType | undefined
 >(undefined);
 
+const POSTS_CACHE_KEY = "smartech_audit_posts";
+
+const readCachedPosts = (): AuditPost[] => {
+  if (typeof window === "undefined") return [];
+
+  try {
+    const cached = window.localStorage.getItem(POSTS_CACHE_KEY);
+    if (!cached) return [];
+
+    const parsed = JSON.parse(cached);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const cachePosts = (posts: AuditPost[]) => {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(
+      POSTS_CACHE_KEY,
+      JSON.stringify(posts),
+    );
+  } catch {
+    // Cache is only a resilience layer when the API is temporarily unavailable.
+  }
+};
+
 export function PostsProvider({
   children,
 }: {
   children: ReactNode;
 }) {
   const [isLoading, setIsLoading] = useState(true);
-  const [posts, setPosts] = useState<AuditPost[]>([]);
+  const [posts, setPosts] =
+    useState<AuditPost[]>(readCachedPosts);
+
+  const setPostsAndCache = (
+    updater:
+      | AuditPost[]
+      | ((prevPosts: AuditPost[]) => AuditPost[]),
+  ) => {
+    setPosts((prevPosts) => {
+      const nextPosts =
+        typeof updater === "function"
+          ? updater(prevPosts)
+          : updater;
+      cachePosts(nextPosts);
+      return nextPosts;
+    });
+  };
 
   // Fetch posts from server on mount
   useEffect(() => {
@@ -51,10 +96,14 @@ export function PostsProvider({
       try {
         setIsLoading(true);
         const response = await api.get("/posts");
-        setPosts(response.posts || []);
+        setPostsAndCache(
+          Array.isArray(response.posts) ? response.posts : [],
+        );
       } catch (error: any) {
-          console.error("❌ REAL ERROR:", error);
-          setPosts([]);
+        console.error("Failed to fetch posts:", error);
+        setPostsAndCache((prevPosts) =>
+          prevPosts.length > 0 ? prevPosts : readCachedPosts(),
+        );
       } finally {
         setIsLoading(false);
       }
@@ -70,7 +119,7 @@ export function PostsProvider({
       // Server unavailable, continue with local storage
     }
     // Always update local state regardless of server response
-    setPosts((prevPosts) => [post, ...prevPosts]);
+    setPostsAndCache((prevPosts) => [post, ...prevPosts]);
   };
 
   const updatePost = async (
@@ -83,7 +132,7 @@ export function PostsProvider({
       // Server unavailable, continue with local storage
     }
     // Always update local state regardless of server response
-    setPosts((prevPosts) =>
+    setPostsAndCache((prevPosts) =>
       prevPosts.map((post) =>
         post.id === postId ? updatedPost : post,
       ),
@@ -97,7 +146,7 @@ export function PostsProvider({
       // Server unavailable, continue with local state.
     }
 
-    setPosts((prevPosts) =>
+    setPostsAndCache((prevPosts) =>
       prevPosts.filter((post) => post.id !== postId),
     );
   };
@@ -117,7 +166,7 @@ export function PostsProvider({
     }
 
     // Always update local state regardless of server response
-    setPosts((prevPosts) =>
+    setPostsAndCache((prevPosts) =>
       prevPosts.map((post) =>
         post.id === postId
           ? {
@@ -145,7 +194,7 @@ export function PostsProvider({
       console.error("Failed to appeal post:", error);
     }
 
-    setPosts((prevPosts) =>
+    setPostsAndCache((prevPosts) =>
       prevPosts.map((post) =>
         post.id === postId
           ? {
@@ -176,7 +225,7 @@ export function PostsProvider({
     }
 
     // Always update local state regardless of server response
-    setPosts((prevPosts) =>
+    setPostsAndCache((prevPosts) =>
       prevPosts.map((post) =>
         post.id === postId
           ? {

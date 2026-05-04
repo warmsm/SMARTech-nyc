@@ -20,175 +20,10 @@ const formatDateSafe = (date: Date): string => {
 
 type Platform = "Facebook" | "Instagram" | "X" | "TikTok";
 
-const FB_LEAD_TEXTS = [
-  "CALL FOR APPLICATIONS |",
-  "LATEST |",
-  "IN PHOTOS |",
-  "READ |",
-  "ICYMI |",
-  "NOW |",
-  "WATCH |",
-];
-
-const FB_LEAD_TEXT_WARNING = `missing recognized lead text when applicable. Accepted lead texts: ${FB_LEAD_TEXTS.join(", ")}`;
-
-const VISUAL_ONLY_REMARK_LABELS = new Set([
-  "Facebook Lead Text",
-  "Text Limit",
-  "Hashtags",
-]);
-
-const PLATFORM_SUGGESTION_PATTERNS = [
-  /facebook caption should start with the correct lead text/i,
-  /facebook post should use the correct lead text/i,
-  /twitter\/x caption should not exceed/i,
-  /twitter\/x caption must include the hashtags/i,
-  /tweet should not exceed/i,
-  /tweet must include the hashtags/i,
-  /tiktok caption should not exceed/i,
-  /tiktok caption must include/i,
-  /instagram caption should not exceed/i,
-  /instagram caption should include/i,
-  /call for applications post must include the hashtags/i,
-  /^,?\s*(call for applications|latest|in photos|read|icymi|now|watch)\s*,?\.?$/i,
-  /^,?\s*or\s+watch\s*\.?$/i,
-  /^\.+$/,
-];
-
-const isPlatformSuggestion = (value: string) =>
-  PLATFORM_SUGGESTION_PATTERNS.some((pattern) => pattern.test(value));
-
-const getCaptionVisualCriteria = (
-  caption: string,
-  platforms: Platform[],
-) => {
-  const lines: string[] = [];
-  const captionText = caption.trim();
-  const captionLower = captionText.toLowerCase();
-
-  if (platforms.includes("Facebook")) {
-    const hasLeadText = FB_LEAD_TEXTS.some((lead) =>
-      captionText.toUpperCase().startsWith(lead),
-    );
-
-    lines.push(
-      `Facebook Lead Text: ${
-        hasLeadText
-          ? "recognized lead text present"
-          : FB_LEAD_TEXT_WARNING
-      }`,
-    );
-  }
-
-  const limits = platforms
-    .map((platform) => {
-      if (platform === "X") return { platform, limit: 280 };
-      if (platform === "TikTok" || platform === "Instagram") {
-        return { platform, limit: 2200 };
-      }
-      return null;
-    })
-    .filter(Boolean) as { platform: Platform; limit: number }[];
-
-  if (limits.length > 0) {
-    const exceeded = limits.filter(
-      ({ limit }) => captionText.length > limit,
-    );
-
-    lines.push(
-      `Text Limit: ${
-        exceeded.length > 0
-          ? exceeded
-              .map(({ platform, limit }) => `${platform} exceeds ${limit} characters`)
-              .join(" | ")
-          : "within selected platform limits"
-      }`,
-    );
-  }
-
-  const hashtagRemarks: string[] = [];
-
-  if (
-    /\bCALL FOR APPLICATIONS\b/i.test(captionText) &&
-    (!captionText.includes("#ForTheFilipinoYouth") ||
-      !captionText.includes("#ParaSaKabataangPilipino"))
-  ) {
-    hashtagRemarks.push(
-      "CALL FOR APPLICATIONS needs #ForTheFilipinoYouth and #ParaSaKabataangPilipino",
-    );
-  }
-
-  if (
-    platforms.includes("X") &&
-    (!captionText.includes("#ForTheFilipinoYouth") ||
-      !captionText.includes("#ParaSaKabataangPilipino"))
-  ) {
-    hashtagRemarks.push(
-      "X needs #ForTheFilipinoYouth and #ParaSaKabataangPilipino",
-    );
-  }
-
-  if (platforms.includes("TikTok")) {
-    const required = [
-      "#fyp",
-      "#fypage",
-      "#youth",
-      "#nationalyouthcommission",
-      "#nycpilipinas",
-    ];
-    const missing = required.filter((tag) => !captionLower.includes(tag));
-
-    if (missing.length > 0) {
-      hashtagRemarks.push(`TikTok missing ${missing.join(", ")}`);
-    }
-  }
-
-  if (platforms.includes("Instagram")) {
-    const options = [
-      "#youth",
-      "#youthph",
-      "#nycpilipinas",
-      "#forthefilipinoyouth",
-      "#parasakabataangpilipino",
-    ];
-
-    if (!options.some((tag) => captionLower.includes(tag))) {
-      hashtagRemarks.push(
-        "Instagram needs at least one youth-related required hashtag",
-      );
-    }
-  }
-
-  if (hashtagRemarks.length > 0) {
-    lines.push(`Hashtags: ${hashtagRemarks.join(" | ")}`);
-  } else if (
-    platforms.some((platform) =>
-      ["X", "TikTok", "Instagram"].includes(platform),
-    ) ||
-    /\bCALL FOR APPLICATIONS\b/i.test(captionText)
-  ) {
-    lines.push("Hashtags: passed selected platform hashtag rules");
-  }
-
-  return lines;
-};
-
-const appendCaptionVisualCriteria = (
-  remarks: string,
-  caption: string,
-  platforms: Platform[],
-) => {
-  const extraLines = getCaptionVisualCriteria(caption, platforms);
-
-  if (extraLines.length === 0) return remarks;
-
-  return [remarks, ...extraLines].filter(Boolean).join("; ");
-};
-
 const getRemarkLines = (remarks?: string) => {
   return (remarks || "")
     .replace(
-      /\s+(?=(Overall score|Grammar|Tone|Inclusivity|Spelling|Facebook Lead Text|Text Limit|Hashtags):)/g,
+      /\s+(?=(Overall score|Grammar|Tone|Inclusivity|Spelling):)/g,
       "\n",
     )
     .split(/[;\n]+/)
@@ -196,63 +31,17 @@ const getRemarkLines = (remarks?: string) => {
     .filter(Boolean);
 };
 
-const cleanRemarkDetail = (label: string, detail: string) => {
-  if (VISUAL_ONLY_REMARK_LABELS.has(label)) return detail;
-
-  const filtered = detail
-    .split(/\s*\|\s*/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .filter((item) => !isPlatformSuggestion(item));
-
-  return filtered.length > 0 ? filtered.join(" | ") : "";
-};
-
-const getVisualDetailLines = (label: string, detail: string) => {
-  if (label === "Facebook Lead Text") {
-    return [
-      detail === "missing recognized lead text when applicable"
-        ? FB_LEAD_TEXT_WARNING
-        : detail,
-    ];
-  }
-
-  if (label === "Text Limit") {
-    return detail
-      .split(/\s*\|\s*|\s*,\s*(?=(Instagram|X|TikTok)\s+exceeds\b)/)
-      .map((item) => item.trim())
-      .filter((item) => item && !/^(Instagram|X|TikTok)$/.test(item));
-  }
-
-  if (label === "Hashtags") {
-    return detail
-      .split(/\s*\|\s*/)
-      .map((item) => item.trim())
-      .filter(Boolean);
-  }
-
-  return [detail];
-};
-
 const renderRemarks = (remarks?: string) => {
-  const rows = getRemarkLines(remarks)
-    .map((line) => {
-      const separatorIndex = line.indexOf(":");
-      const hasLabel = separatorIndex > -1;
-      const label = hasLabel ? line.slice(0, separatorIndex) : "Summary";
-      const detail = cleanRemarkDetail(
-        label,
-        hasLabel ? line.slice(separatorIndex + 1).trimStart() : line,
-      );
+  const rows = getRemarkLines(remarks).map((line) => {
+    const separatorIndex = line.indexOf(":");
+    const hasLabel = separatorIndex > -1;
+    const label = hasLabel ? line.slice(0, separatorIndex) : "Summary";
+    const detail = hasLabel
+      ? line.slice(separatorIndex + 1).trimStart()
+      : line;
 
-      return {
-        label,
-        detail,
-        detailLines: getVisualDetailLines(label, detail),
-        isVisualOnly: VISUAL_ONLY_REMARK_LABELS.has(label),
-      };
-    })
-    .filter((row) => row.detail);
+    return { label, detail };
+  });
 
   if (rows.length === 0) return null;
 
@@ -272,19 +61,11 @@ const renderRemarks = (remarks?: string) => {
         <tbody className="divide-y divide-border">
           {rows.map((row, index) => (
             <tr key={`${row.label}-${index}`}>
-              <td
-                className={`px-3 py-2 align-top text-foreground ${
-                  row.isVisualOnly ? "font-normal" : "font-semibold"
-                }`}
-              >
+              <td className="px-3 py-2 align-top font-semibold text-foreground">
                 {row.label}
               </td>
               <td className="px-3 py-2 align-top text-muted-foreground">
-                <div className="space-y-1">
-                  {row.detailLines.map((line) => (
-                    <div key={line}>{line}</div>
-                  ))}
-                </div>
+                {row.detail}
               </td>
             </tr>
           ))}
@@ -369,17 +150,8 @@ export function CaptionsPage() {
 
     try {
       const result = await verifyCaption(caption);
-      const resultWithVisualCriteria = {
-        ...result,
-        remarks: appendCaptionVisualCriteria(
-          result.remarks,
-          caption,
-          selectedPlatforms,
-        ),
-      };
-
-      setAnalysisResult(resultWithVisualCriteria);
-      await submitPost(resultWithVisualCriteria);
+      setAnalysisResult(result);
+      await submitPost(result);
     } catch (error) {
       console.warn(
         "Caption verifier API unavailable, using fallback analysis:",
@@ -456,11 +228,7 @@ export function CaptionsPage() {
 
       const result = {
         captionScore,
-        remarks: appendCaptionVisualCriteria(
-          remarks,
-          caption,
-          selectedPlatforms,
-        ),
+        remarks,
         status,
         grammar: Math.min(100, grammar),
         inclusivity: Math.min(100, inclusivity),

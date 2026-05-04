@@ -34,35 +34,6 @@ type SortColumn =
   | "actions";
 type SortDirection = "asc" | "desc";
 
-const VISUAL_ONLY_REMARK_LABELS = new Set([
-  "Facebook Lead Text",
-  "Text Limit",
-  "Hashtags",
-]);
-
-const FB_LEAD_TEXT_WARNING =
-  "missing recognized lead text when applicable. Accepted lead texts: CALL FOR APPLICATIONS |, LATEST |, IN PHOTOS |, READ |, ICYMI |, NOW |, WATCH |";
-
-const PLATFORM_SUGGESTION_PATTERNS = [
-  /facebook caption should start with the correct lead text/i,
-  /facebook post should use the correct lead text/i,
-  /twitter\/x caption should not exceed/i,
-  /twitter\/x caption must include the hashtags/i,
-  /tweet should not exceed/i,
-  /tweet must include the hashtags/i,
-  /tiktok caption should not exceed/i,
-  /tiktok caption must include/i,
-  /instagram caption should not exceed/i,
-  /instagram caption should include/i,
-  /call for applications post must include the hashtags/i,
-  /^,?\s*(call for applications|latest|in photos|read|icymi|now|watch)\s*,?\.?$/i,
-  /^,?\s*or\s+watch\s*\.?$/i,
-  /^\.+$/,
-];
-
-const isPlatformSuggestion = (value: string) =>
-  PLATFORM_SUGGESTION_PATTERNS.some((pattern) => pattern.test(value));
-
 export function CaptionTable({ posts }: CaptionTableProps) {
   const { currentOffice } = useAuth();
   const { appealPost, deletePost } = usePosts();
@@ -98,7 +69,7 @@ export function CaptionTable({ posts }: CaptionTableProps) {
   const getRemarkLines = (remarks?: string) => {
     return (remarks || "")
       .replace(
-        /\s+(?=(Overall score|Grammar|Tone|Inclusivity|Spelling|Facebook Lead Text|Text Limit|Hashtags):)/g,
+        /\s+(?=(Overall score|Grammar|Tone|Inclusivity|Spelling):)/g,
         "\n",
       )
       .split(/[;\n]+/)
@@ -106,82 +77,25 @@ export function CaptionTable({ posts }: CaptionTableProps) {
       .filter(Boolean);
   };
 
-  const cleanRemarkDetail = (label: string, detail: string) => {
-    if (VISUAL_ONLY_REMARK_LABELS.has(label)) return detail;
-
-    const filtered = detail
-      .split(/\s*\|\s*/)
-      .map((item) => item.trim())
-      .filter(Boolean)
-      .filter((item) => !isPlatformSuggestion(item));
-
-    return filtered.length > 0 ? filtered.join(" | ") : "";
-  };
-
-  const getVisualDetailLines = (label: string, detail: string) => {
-    if (label === "Facebook Lead Text") {
-      return [
-        detail === "missing recognized lead text when applicable"
-          ? FB_LEAD_TEXT_WARNING
-          : detail,
-      ];
-    }
-
-    if (label === "Text Limit") {
-      return detail
-        .split(/\s*\|\s*|\s*,\s*(?=(Instagram|X|TikTok)\s+exceeds\b)/)
-        .map((item) => item.trim())
-        .filter((item) => item && !/^(Instagram|X|TikTok)$/.test(item));
-    }
-
-    if (label === "Hashtags") {
-      return detail
-        .split(/\s*\|\s*/)
-        .map((item) => item.trim())
-        .filter(Boolean);
-    }
-
-    return [detail];
-  };
-
   const renderRemarks = (remarks?: string) => {
-    const lines = getRemarkLines(remarks)
-      .map((line) => {
-        const separatorIndex = line.indexOf(":");
-        const hasLabel = separatorIndex > -1;
-        const rawLabel = hasLabel ? line.slice(0, separatorIndex) : "";
-        const detail = cleanRemarkDetail(
-          rawLabel,
-          hasLabel ? line.slice(separatorIndex + 1).trimStart() : line,
-        );
-
-        return { line, separatorIndex, hasLabel, rawLabel, detail };
-      })
-      .filter(({ detail }) => detail);
+    const lines = getRemarkLines(remarks);
 
     if (lines.length === 0) return null;
 
-    return lines.map(({ line, hasLabel, rawLabel, detail }, index) => {
-      const label = hasLabel ? `${rawLabel}:` : "";
-      const labelWeight = VISUAL_ONLY_REMARK_LABELS.has(rawLabel)
-        ? "font-normal"
-        : "font-semibold";
-      const detailLines = getVisualDetailLines(rawLabel, detail);
+    return lines.map((line, index) => {
+      const separatorIndex = line.indexOf(":");
+      const hasLabel = separatorIndex > -1;
+      const label = hasLabel ? line.slice(0, separatorIndex + 1) : "";
+      const detail = hasLabel ? line.slice(separatorIndex + 1).trimStart() : line;
 
       return (
         <div key={`${line}-${index}`}>
           {hasLabel ? (
             <>
-              <span className={`${labelWeight} text-foreground`}>
+              <span className="font-semibold text-foreground">
                 {label}
               </span>{" "}
-              <span>
-                {detailLines.map((detailLine) => (
-                  <span key={detailLine} className="block">
-                    {detailLine}
-                  </span>
-                ))}
-              </span>
+              <span>{detail}</span>
             </>
           ) : (
             <span>{detail}</span>

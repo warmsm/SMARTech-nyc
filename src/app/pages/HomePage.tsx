@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { PubMatTable } from "@/app/components/PubMatTable";
 import { CaptionTable } from "@/app/components/CaptionTable";
 import { Filters } from "@/app/components/Filters";
@@ -22,6 +22,7 @@ export function HomePage() {
 
   const [pubmatPage, setPubmatPage] = useState(1);
   const [captionPage, setCaptionPage] = useState(1);
+  const requestedThumbnailIds = useRef(new Set<string>());
 
   const officePosts = useMemo(() => {
     if (!currentOffice) return [];
@@ -123,10 +124,17 @@ export function HomePage() {
   useEffect(() => { setCaptionPage((page) => Math.min(page, captionPageCount)); }, [captionPageCount]);
   useEffect(() => {
     const visiblePubmatIds = paginatedPubMats
-      .filter((post) => !post.thumbnail)
+      .filter(
+        (post) =>
+          !post.thumbnail &&
+          !requestedThumbnailIds.current.has(post.id),
+      )
       .map((post) => post.id);
 
     if (visiblePubmatIds.length > 0) {
+      visiblePubmatIds.forEach((id) =>
+        requestedThumbnailIds.current.add(id),
+      );
       void loadPostThumbnails(visiblePubmatIds);
     }
   }, [paginatedPubMats, loadPostThumbnails]);

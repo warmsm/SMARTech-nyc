@@ -59,9 +59,14 @@ const cachePosts = (posts: AuditPost[]) => {
   if (typeof window === "undefined") return;
 
   try {
+    const cacheablePosts = posts.map((post) => ({
+      ...post,
+      thumbnail: undefined,
+    }));
+
     window.localStorage.setItem(
       POSTS_CACHE_KEY,
-      JSON.stringify(posts),
+      JSON.stringify(cacheablePosts),
     );
   } catch {
     // Cache is only a resilience layer when the API is temporarily unavailable.
@@ -134,6 +139,7 @@ export function PostsProvider({
         `/posts/thumbnails?ids=${encodeURIComponent(ids.join(","))}`,
       );
       const thumbnails = response.thumbnails || {};
+      if (Object.keys(thumbnails).length === 0) return;
 
       setPosts((prevPosts) =>
         prevPosts.map((post) =>

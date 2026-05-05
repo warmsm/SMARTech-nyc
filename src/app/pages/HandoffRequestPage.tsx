@@ -6,28 +6,8 @@ import { Label } from "@/app/components/ui/label";
 import { Input } from "@/app/components/ui/input";
 import { useAccessRequests } from "@/contexts/AccessRequestsContext";
 import { api } from "@/utils/supabase/client";
+import { OFFICE_ACCOUNTS } from "@/data/officeAccounts";
 
-const OFFICE_ACCOUNTS: Record<string, { office: string }> = {
-  "central.office@smartech.ph": { office: "Central NYC" },
-  "youth.organization@smartech.ph": {
-    office: "Youth Organization Registration Program (YORP)",
-  },
-  "sangguniang.kabataan@smartech.ph": {
-    office: "NYC Sangguniang Kabataan",
-  },
-  "ncr.ivb@smartech.ph": { office: "NYC NCR and MIMAROPA" },
-  "car.i@smartech.ph": { office: "NYC CAR and Region 1" },
-  "ii.iii@smartech.ph": { office: "NYC Regions 2 and 3" },
-  "iv-a@smartech.ph": { office: "NYC CALABARZON" },
-  "v@smartech.ph": { office: "NYC Region 5" },
-  "vi@smartech.ph": { office: "NYC Region 6" },
-  "vii.viii@smartech.ph": { office: "NYC Regions 7 and 8" },
-  "ix.xii@smartech.ph": { office: "NYC Regions 9 and 12" },
-  "x.caraga@smartech.ph": {
-    office: "NYC Region 10 and CARAGA",
-  },
-  "xi.barmm@smartech.ph": { office: "NYC Region 11 and BARMM" },
-};
 export default function HandoffRequestPage() {
   const navigate = useNavigate();
   const { addRequest } = useAccessRequests();
@@ -61,10 +41,19 @@ export default function HandoffRequestPage() {
       );
       profile = response.profile;
     } catch {
-      setError(
-        "Email not recognized. Please use an approved office email.",
-      );
-      return;
+      const fallbackProfile = OFFICE_ACCOUNTS[normalizedEmail];
+
+      if (!fallbackProfile) {
+        setError(
+          "Email not recognized. Please use an approved office email.",
+        );
+        return;
+      }
+
+      profile = {
+        email: normalizedEmail,
+        office: fallbackProfile.office,
+      };
     }
 
     if (!form.newName) {

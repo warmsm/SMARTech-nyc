@@ -6,6 +6,7 @@ import { Label } from "@/app/components/ui/label";
 import { Input } from "@/app/components/ui/input";
 import { useAccessRequests } from "@/contexts/AccessRequestsContext";
 import { api } from "@/utils/supabase/client";
+import { OFFICE_ACCOUNTS } from "@/data/officeAccounts";
 
 export default function ForgotPasswordPage() {
   const navigate = useNavigate();
@@ -36,10 +37,19 @@ export default function ForgotPasswordPage() {
       );
       profile = response.profile;
     } catch {
-      setError(
-        "This email is not registered to any approved office account.",
-      );
-      return;
+      const fallbackProfile = OFFICE_ACCOUNTS[normalizedEmail];
+
+      if (!fallbackProfile) {
+        setError(
+          "This email is not registered to any approved office account.",
+        );
+        return;
+      }
+
+      profile = {
+        email: normalizedEmail,
+        office: fallbackProfile.office,
+      };
     }
 
     await addRequest({

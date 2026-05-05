@@ -58,13 +58,29 @@ export function AuthProvider({
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const loadProfile = async (userId: string) => {
+  const profileFromUserMetadata = (authUser: User): Profile | null => {
+    const office = authUser.user_metadata?.office;
+    const role = authUser.user_metadata?.role;
+
+    if (!office || (role !== "admin" && role !== "user")) {
+      return null;
+    }
+
+    return {
+      id: authUser.id,
+      email: authUser.email ?? "",
+      office,
+      role,
+    };
+  };
+
+  const loadProfile = async (authUser: User) => {
     try {
       const { data, error } = await withTimeout(
         supabase
           .from("profiles")
           .select("id, email, office, role")
-          .eq("id", userId)
+          .eq("id", authUser.id)
           .maybeSingle(),
         { data: null, error: null } as any,
       );
@@ -72,11 +88,11 @@ export function AuthProvider({
       if (data && !error) {
         setProfile(data as Profile);
       } else {
-        setProfile(null);
+        setProfile(profileFromUserMetadata(authUser));
       }
     } catch (error) {
       console.error("Failed to load user profile:", error);
-      setProfile(null);
+      setProfile(profileFromUserMetadata(authUser));
     }
   };
 
@@ -94,7 +110,7 @@ export function AuthProvider({
         setUser(data.session?.user ?? null);
 
         if (data.session?.user) {
-          await loadProfile(data.session.user.id);
+          await loadProfile(data.session.user);
         } else {
           setProfile(null);
         }
@@ -119,7 +135,7 @@ export function AuthProvider({
         setIsLoading(false);
 
         if (newSession?.user) {
-          void loadProfile(newSession.user.id);
+          void loadProfile(newSession.user);
         } else {
           setProfile(null);
         }
@@ -147,7 +163,7 @@ export function AuthProvider({
 
     setUser(data.user);
     setSession(data.session);
-    await loadProfile(data.user.id);
+    await loadProfile(data.user);
 
     return true;
   };

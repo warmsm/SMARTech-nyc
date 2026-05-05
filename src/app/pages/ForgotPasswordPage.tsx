@@ -16,9 +16,11 @@ export default function ForgotPasswordPage() {
   const [submittedEmail, setSubmittedEmail] = useState("");
   const [step, setStep] = useState<"email" | "done">("email");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setError("");
 
     if (!email) {
@@ -52,18 +54,26 @@ export default function ForgotPasswordPage() {
       };
     }
 
-    await addRequest({
-      id: crypto.randomUUID(),
-      type: "forgot-password",
-      officeEmail: normalizedEmail,
-      officeName: profile.office,
-      status: "Pending",
-      submittedAt: new Date().toLocaleString(),
-    });
+    setIsSubmitting(true);
 
-    setSubmittedEmail(normalizedEmail);
+    try {
+      await addRequest({
+        id: crypto.randomUUID(),
+        type: "forgot-password",
+        officeEmail: normalizedEmail,
+        officeName: profile.office,
+        status: "Pending",
+        submittedAt: new Date().toLocaleString(),
+      });
 
-    setStep("done");
+      setSubmittedEmail(normalizedEmail);
+
+      setStep("done");
+    } catch {
+      setError("Failed to submit request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -107,9 +117,12 @@ export default function ForgotPasswordPage() {
 
                   <Button
                     type="submit"
+                    disabled={isSubmitting}
                     className="w-full bg-[#FFFF00] hover:bg-[#FFFF00]/90 text-black font-semibold"
                   >
-                    Submit Request
+                    {isSubmitting
+                      ? "Request Submitting"
+                      : "Submit Request"}
                   </Button>
                 </form>
 
